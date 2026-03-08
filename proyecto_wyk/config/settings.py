@@ -38,6 +38,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'usuarios',
+    'inventario',
+    'compras',
+    'ventas',
+    'produccion',
 ]
 
 MIDDLEWARE = [
@@ -76,14 +80,14 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'nombre_de_tu_bd_ya_hecha',
-        'USER': 'tu_usuario_postgres',
-        'PASSWORD': 'tu_password',
-        'HOST': '127.0.0.1',
+        'NAME': 'proyecto_wyk',
+        'USER': 'postgres',
+        'PASSWORD': 'Admin14',
+        'HOST': 'localhost',
         'PORT': '5432',
     }
 }
-
+AUTH_USER_MODEL = 'usuarios.Usuario'
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
