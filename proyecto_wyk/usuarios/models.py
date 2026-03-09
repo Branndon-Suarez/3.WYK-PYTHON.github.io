@@ -22,32 +22,37 @@ class Rol(models.Model):
 
 
 # ---------------------------------MANAGER PARA USUARIO---------------------------------
+# ---------------------------------MANAGER PARA USUARIO---------------------------------
 class UsuarioManager(BaseUserManager):
     def create_user(self, num_doc, password=None, **extra_fields):
         if not num_doc:
             raise ValueError('El número de documento es obligatorio')
 
-        # Aquí forzamos que si no viene un rol, el sistema lance error (excepto en el shell si lo manejamos)
         user = self.model(num_doc=num_doc, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, num_doc, password=None, **extra_fields):
+    def create_superuser(self, num_doc, nombre, email_usuario, tel_usuario, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('estado_usuario', True)
 
-        # LÓGICA DE PROTECCIÓN:
-        # Intentamos buscar el primer rol que sea de clasificación ADMINISTRADOR
+        # Agregamos manualmente los campos que Django pide por consola
+        extra_fields['nombre'] = nombre
+        extra_fields['email_usuario'] = email_usuario
+        extra_fields['tel_usuario'] = tel_usuario
+
+        # LÓGICA DE PROTECCIÓN PARA EL ROL:
         try:
             rol_admin = Rol.objects.filter(clasificacion='ADMINISTRADOR').first()
             if not rol_admin:
                 raise ValueError(
-                    "No existe ningún ROL con clasificación 'ADMINISTRADOR' en la base de datos. Créalo primero en Postgres.")
+                    "No existe ningún ROL con clasificación 'ADMINISTRADOR' en la base de datos. Créalo primero en la shell.")
             extra_fields.setdefault('rol_fk_usuario', rol_admin)
         except Exception:
             raise ValueError(
-                "Error al acceder a la tabla ROL. Asegúrate de haber corrido las migraciones y tener roles creados.")
+                "Error al acceder a la tabla ROL. Asegúrate de tener la tabla creada y el rol ADMINISTRADOR registrado.")
 
         return self.create_user(num_doc, password, **extra_fields)
 
@@ -76,7 +81,7 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     objects = UsuarioManager()
 
     USERNAME_FIELD = 'num_doc'
-    REQUIRED_FIELDS = ['nombre', 'email_usuario']
+    REQUIRED_FIELDS = ['nombre', 'email_usuario', 'tel_usuario']
 
     class Meta:
         managed = False
