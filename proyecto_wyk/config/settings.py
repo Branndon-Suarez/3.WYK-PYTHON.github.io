@@ -59,7 +59,7 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -123,4 +123,18 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
+#Django busca la carpeta static(css,js,images) dentro de las app
 STATIC_URL = 'static/'
+
+#Le dice a Django que ademas de buscar en las app busque la carpeta static en la raiz del proyecto
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
+
+# Configuración de campos automáticos para modelos
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Configuración de rutas de autenticación
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = '/admin/'  # Temporalmente al admin para que no te dé error 404
+LOGOUT_REDIRECT_URL = 'login'
