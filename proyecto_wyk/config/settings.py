@@ -59,7 +59,7 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
+        'DIRS': [BASE_DIR / 'templates'],#Le dice a Django que ademas de buscar en las app busque la carpeta templates en la raiz del proyecto
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
