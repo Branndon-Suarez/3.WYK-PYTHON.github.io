@@ -7,7 +7,7 @@ from .models import Rol
 @login_required
 def inicio(request):
     # Django buscará este archivo en la carpeta global templates/inicio.html
-    return render(request, 'inicio.html')
+    return render(request, 'usuarios/inicio.html')
 
 # ------------------------------ FUNCIONES DE ROLES ------------------------------
 
