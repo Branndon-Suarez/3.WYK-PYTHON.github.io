@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+<main class="p-24" style="display: flex; justify-content: center; align-items: center; min-height: 80vh;">
+    <div id="catalog-pane" style="max-width: 500px; text-align: center; border-top: 5px solid var(--bad);">
+        <h2 class="p-20" style="color: var(--bad);">
+            <i class="fas fa-exclamation-triangle"></i> ¿Eliminar Rol?
+        </h2>
+        <hr style="border: 0; border-top: 1px solid var(--ring);">
+        
+        <div class="p-24">
+            <p>Estás a punto de eliminar el rol: <strong>"{{ rol.rol }}"</strong>.</p>
+            <p class="muted" style="font-size: 0.9rem; margin-top: 10px;">
+                Esta acción no se puede deshacer. Si el rol tiene usuarios asociados, el sistema bloqueará la eliminación por seguridad.
+            </p>
+        </div>
+
+        <form method="POST" class="p-24" style="display: flex; gap: 12px; justify-content: center;">
+            {% csrf_token %}
+            <a href="{% url 'lista_roles' %}" class="btn btn-ghost">
+                <i class="fas fa-arrow-left"></i> Cancelar
+            </a>
+            <button type="submit" class="btn" style="background-color: var(--bad); color: white;">
+                <i class="fas fa-trash-alt"></i> Confirmar Eliminación
+            </button>
+        </form>
+    </div>
+</main>
+{% endblock %}
