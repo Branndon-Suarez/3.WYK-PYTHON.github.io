@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Panadería WYK{% endblock %}</title>
+
+    <link rel="stylesheet" href="{% static 'css/sidebar.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://unpkg.com/feather-icons"></script>
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body data-theme="light">
+    <div class="app">
+        <nav class="sidebar">
+            <div class="logo">🍞</div>
+            <ul>
+                <li>
+                    <a href="{% url 'inicio' %}" class="nav-btn" title="Inicio">
+                        <i class="fas fa-home"></i>
+                    </a>
+                </li>
+                <li class="has-submenu">
+                    <a href="#" class="nav-btn" title="Gestión">
+                        <i class="fas fa-box"></i>
+                    </a>
+                    <ul class="submenu">
+                        <li><a href="#"><i class="fas fa-cookie"></i> Productos</a></li>
+                        <li><a href="#"><i class="fas fa-users"></i> Empleados</a></li>
+                    </ul>
+                </li>
+                <li class="spacer"></li>
+                <li>
+                    {% csrf_token %}
+                    <a href="#" id="logout-link" class="nav-btn" title="Cerrar Sesión">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <main class="main-content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <script src="{% static 'js/sweetalert2.all.min.js' %}"></script>
+    <script src="{% static 'js/sidebar.js' %}"></script>
+    <script src="{% static 'js/logout.js' %}"></script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

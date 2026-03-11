@@ -21,9 +21,12 @@ from django.views.generic import RedirectView
 urlpatterns = [
     path('admin/', admin.site.urls),
 
-    # Esto busca tu login.html en templates/registration/
+    # Gestión de autenticación (Login/Logout)
     path('accounts/', include('django.contrib.auth.urls')),
 
-    # Si alguien entra a la raíz, lo mandamos al login
-    path('', RedirectView.as_view(url='/accounts/login/')),
+    # Rutas de tu aplicación de usuarios (Dashboard)
+    path('usuarios/', include('usuarios.urls')),
+
+    # Redirección de la raíz al login
+    path('', RedirectView.as_view(url='/accounts/login/', permanent=True)),
 ]

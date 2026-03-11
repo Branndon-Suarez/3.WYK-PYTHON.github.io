@@ -136,5 +136,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Configuración de rutas de autenticación
 LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = '/admin/'  # Temporalmente al admin para que no te dé error 404
+LOGIN_REDIRECT_URL = 'inicio'  # Temporalmente al admin para que no te dé error 404
 LOGOUT_REDIRECT_URL = 'login'
