@@ -1,71 +1,78 @@
 <!DOCTYPE html>
 {% load static %}
+
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Iniciar Sesión - WYK</title>
+    <title>Panadería WYK - Login</title>
     <link rel="stylesheet" href="{% static 'css/login.css' %}">
-    <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-<main>
-    <div class="container">
-        <div class="forms-container">
-            <div class="container-login">
-                <form action="{% url 'login' %}" id="login-form" class="sign-in-form" method="post" novalidate>
-                    {% csrf_token %} <h2 class="title">Iniciar Sesión</h2>
+    <div class="particles" id="particles"></div>
 
-                    <div class="input-field">
-                        <lord-icon
-                            src="https://cdn.lordicon.com/fmasbomy.json"
-                            trigger="hover"
-                            stroke="bold"
-                            colors="primary:#000000,secondary:#a63754,tertiary:#eeca66"
-                            style="width:50px;height:50px">
-                        </lord-icon>
-                        <input type="number" name="username" placeholder="Número de Documento" required>
-                    </div>
-
-                    <div class="input-field">
-                        <lord-icon
-                            src="https://cdn.lordicon.com/zbbefawl.json"
-                            trigger="hover"
-                            style="width:50px;height:50px">
-                        </lord-icon>
-                        <input type="password" name="password" placeholder="Contraseña" required>
-                    </div>
-
-                    <button type="submit" class="btn solid">Iniciar Sesión</button>
-
-                </form>
+    <div class="login-wrapper">
+        <div class="left-panel">
+            <div class="left-content">
+                <img src="{% static 'images/logo_wyk.png' %}" alt="Logo WYK" class="logo-big">
+                <h1>Panadería & Cafetería</h1>
+                <h2>WYK Express</h2>
+                <p>Sistema de Gestión Integral</p>
+                <div class="features">
+                    <div class="feature-item"><i class="fa fa-box"></i><span>Inventario</span></div>
+                    <div class="feature-item"><i class="fa fa-chart-line"></i><span>Ventas</span></div>
+                    <div class="feature-item"><i class="fa fa-industry"></i><span>Producción</span></div>
+                    <div class="feature-item"><i class="fa fa-tasks"></i><span>Tareas</span></div>
+                </div>
             </div>
         </div>
 
-        <div class="panels-container">
-            <div class="panel left-panel">
-                <div class="content">
-                    <h3>¿No estás registrado?</h3>
-                    <p>¡Comunícate con el administrador del sistema!</p>
+        <div class="right-panel">
+            <div class="login-box">
+                <div class="login-header">
+                    <img src="{% static 'images/logo_wyk.png' %}" alt="Logo" class="logo-small">
+                    <h3>Bienvenido</h3>
+                    <p>Inicia sesión para continuar</p>
                 </div>
-                <img src="{% static 'images/imgLogin/login-1.svg' %}" class="image" alt="Ilustración">
+
+                <form action="{% url 'login' %}" id="login-form" method="post" novalidate>
+                    {% csrf_token %}
+
+                    <div class="form-group">
+                        <label for="username"><i class="fa fa-envelope"></i> Número de Documento</label>
+                        <input type="text" name="username" id="username" placeholder="Tu documento" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password"><i class="fa fa-lock"></i> Contraseña</label>
+                        <div class="pass-wrapper">
+                            <input type="password" name="password" id="password" placeholder="••••••••" required>
+                            <button type="button" class="toggle-pass" onclick="togglePass()">
+                                <i class="fa fa-eye" id="toggleIcon"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-login" id="btnLogin">
+                        <span id="btnText"><i class="fa fa-sign-in-alt"></i> Ingresar</span>
+                    </button>
+                </form>
+
+                <p class="footer-text">
+                    <i class="fa fa-shield-alt"></i> Acceso restringido al personal autorizado
+                </p>
             </div>
         </div>
     </div>
-</main>
 
-<script>
-    // Pasamos los mensajes de Django a variables de JavaScript
-    var successMessage = "{{ success_message|default:'' }}";
-    var errorMessage = "";
-
-    {% if form.errors %}
-        errorMessage = "Documento o contraseña incorrectos.";
-    {% endif %}
-</script>
-
-<script src="https://cdn.lordicon.com/lordicon.js"></script>
-<script src="{% static 'js/sweetalert2.all.min.js' %}"></script>
-<script src="{% static 'js/toads-sweetalert2.js' %}"></script>
+    <script>
+        var successMessage = "{{ success_message|default:'' }}";
+        var errorMessage = "";
+        {% if form.errors %} errorMessage = "Documento o contraseña incorrectos."; {% endif %}
+    </script>
+    <script src="{% static 'js/sweetalert2.all.min.js' %}"></script>
+    <script src="{% static 'js/toads-sweetalert2.js' %}"></script>
+    <script src="{% static 'js/login-visual.js' %}"></script>
 </body>
 </html>
