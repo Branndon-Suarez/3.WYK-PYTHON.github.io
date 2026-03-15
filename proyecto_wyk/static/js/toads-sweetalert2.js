@@ -1,6 +1,12 @@
+/**
+ * toads-sweetalert2.js
+ * Sistema de notificaciones tipo Toast para Panadería WYK
+ */
+
 document.addEventListener('DOMContentLoaded', function() {
     const loginForm = document.getElementById('login-form');
 
+    // 1. VALIDACIÓN DEL LADO DEL CLIENTE (Antes de enviar al servidor)
     if (loginForm) {
         loginForm.addEventListener('submit', function(e) {
             const userInput = loginForm.querySelector('input[name="username"]');
@@ -8,16 +14,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
             let errorMsg = "";
 
-            if (!userInput.value.trim() && !userInput.validity.badInput || !passwordInput.value.trim()) {
+            // Limpieza y validación básica
+            if (!userInput.value.trim() || !passwordInput.value.trim()) {
                 errorMsg = "Por favor, completa todos los campos.";
             }
-            else if (userInput.validity.badInput || isNaN(userInput.value)) {
+            else if (isNaN(userInput.value)) {
                 errorMsg = "El número de documento debe contener solo números.";
             }
 
-            // Si hay un error, detenemos el envío y mostramos SweetAlert
+            // Si hay error de campos, lanzamos el Toast naranja
             if (errorMsg) {
-                e.preventDefault(); // Evita que el formulario se envíe
+                e.preventDefault();
                 Swal.fire({
                     toast: true,
                     icon: "warning",
@@ -25,26 +32,36 @@ document.addEventListener('DOMContentLoaded', function() {
                     position: "top-end",
                     showConfirmButton: false,
                     timer: 3000,
-                    timerProgressBar: true
+                    timerProgressBar: true,
+                    background: '#f5a623', // Naranja corporativo
+                    color: '#fff',         // Texto blanco
+                    iconColor: '#fff',     // Icono blanco
+                    didOpen: (toast) => {
+                        toast.onmouseenter = Swal.stopTimer;
+                        toast.onmouseleave = Swal.resumeTimer;
+                    }
                 });
             }
         });
     }
 });
 
-// ... aquí sigue el código que ya tenías de successMessage y errorMessage ...
-
+// 2. MANEJO DE MENSAJES QUE VIENEN DESDE DJANGO (Backend)
 if (typeof Swal !== 'undefined') {
-    // Si la variable existe y tiene texto (Éxito)
-    if (typeof successMessage !== 'undefined' && successMessage) {
+
+    // Toast de ÉXITO (Verde Panadería)
+    if (typeof successMessage !== 'undefined' && successMessage && successMessage.trim() !== "") {
         Swal.fire({
             toast: true,
             icon: "success",
             title: successMessage,
             position: "top-end",
             showConfirmButton: false,
-            timer: 2000,
+            timer: 3000,
             timerProgressBar: true,
+            background: '#28a745', // Verde éxito
+            color: '#fff',
+            iconColor: '#fff',
             didOpen: (toast) => {
                 toast.onmouseenter = Swal.stopTimer;
                 toast.onmouseleave = Swal.resumeTimer;
@@ -52,16 +69,19 @@ if (typeof Swal !== 'undefined') {
         });
     }
 
-    // Si la variable existe y tiene texto (Error)
-    if (typeof errorMessage !== 'undefined' && errorMessage) {
+    // Toast de ERROR de Servidor/Credenciales (Naranja Corporativo)
+    if (typeof errorMessage !== 'undefined' && errorMessage && errorMessage.trim() !== "") {
         Swal.fire({
             toast: true,
-            icon: "error",
+            icon: "warning", // Usamos warning para mantener el esquema naranja/blanco
             title: errorMessage,
             position: "top-end",
             showConfirmButton: false,
-            timer: 2000,
+            timer: 4000, // Un segundo extra para errores de acceso
             timerProgressBar: true,
+            background: '#f5a623', // Naranja corporativo
+            color: '#fff',         // Texto blanco
+            iconColor: '#fff',     // Icono blanco
             didOpen: (toast) => {
                 toast.onmouseenter = Swal.stopTimer;
                 toast.onmouseleave = Swal.resumeTimer;

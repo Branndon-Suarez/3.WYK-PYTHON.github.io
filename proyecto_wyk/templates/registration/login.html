@@ -66,36 +66,27 @@
         </div>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            var errorMessage = "";
-
-            // 1. Capturar errores de validación del formulario (Capa Django Forms)
-            {% if form.errors %}
-                errorMessage = "Por favor, verifica los datos ingresados.";
-            {% endif %}
-
-            // 2. Capturar mensajes de error de la vista (Capa de Seguridad/Auth)
-            {% if messages %}
-                {% for message in messages %}
-                    {% if message.tags == 'error' %}
-                        errorMessage = "{{ message }}";
-                    {% endif %}
-                {% endfor %}
-            {% endif %}
-
-            // Si hay algún error, lanzamos el SweetAlert que ya tienes configurado
-            if (errorMessage) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error de acceso',
-                    text: errorMessage,
-                    confirmButtonColor: '#f5a623'
-                });
-            }
-        });
-    </script>
     <script src="{% static 'js/sweetalert2.all.min.js' %}"></script>
+
+    <script>
+        var successMessage = "";
+        var errorMessage = "";
+
+        {% if form.errors %}
+            errorMessage = "Por favor, verifica los datos ingresados.";
+        {% endif %}
+
+        {% if messages %}
+            {% for message in messages %}
+                {% if message.tags == 'error' %}
+                    errorMessage = "{{ message }}";
+                {% elif message.tags == 'success' %}
+                    successMessage = "{{ message }}";
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+    </script>
+
     <script src="{% static 'js/toads-sweetalert2.js' %}"></script>
     <script src="{% static 'js/login-visual.js' %}"></script>
 </body>
