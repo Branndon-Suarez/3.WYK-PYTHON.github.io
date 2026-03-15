@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import ProtectedError
 # --- NUEVAS IMPORTACIONES PARA EL LOGIN ---
-from django.contrib.auth import login as auth_login, logout as auth_logout
+from django.contrib.auth import login as auth_login, logout as auth_logout, authenticate
 from .forms import LoginForm
 from .models import Rol
 
@@ -11,23 +11,42 @@ from .models import Rol
 # ------------------------------ AUTENTICACIÓN ------------------------------
 
 def login_view(request):
-    # Si ya está logueado, no tiene sentido ver el login, va al inicio
     if request.user.is_authenticated:
         return redirect('inicio')
 
     if request.method == 'POST':
         form = LoginForm(data=request.POST)
         if form.is_valid():
+            # Si llegamos aquí, los datos existen y el usuario está activo
             user = form.get_user()
             auth_login(request, user)
             return redirect('inicio')
         else:
-            # Este mensaje lo atrapará el script que pusimos en tu login.html
-            messages.error(request, "Número de documento o contraseña incorrectos.")
+            # Si el formulario NO es válido, investigamos por qué:
+            num_doc = request.POST.get('username')  # 'username' es el nombre del campo en AuthenticationForm
+            password = request.POST.get('password')
+
+            # Buscamos al usuario manualmente para ver si es que está inactivo
+            user = authenticate(request, num_doc=num_doc, password=password)
+
+            # Si authenticate es None pero el usuario existe, es porque está INACTIVO
+            from .models import Usuario
+            try:
+                usuario_db = Usuario.objects.get(num_doc=num_doc)
+                # Si la contraseña es correcta pero no autenticó, revisamos is_active
+                if usuario_db.check_password(password) and not usuario_db.is_active:
+                    messages.error(request,
+                                   "Acceso denegado. Tu cuenta está inactiva, comunícate con el administrador.")
+                else:
+                    messages.error(request, "Número de documento o contraseña incorrectos.")
+            except Usuario.DoesNotExist:
+                messages.error(request, "Número de documento o contraseña incorrectos.")
     else:
         form = LoginForm()
 
     return render(request, 'registration/login.html', {'form': form})
+
+
 
 
 def logout_view(request):

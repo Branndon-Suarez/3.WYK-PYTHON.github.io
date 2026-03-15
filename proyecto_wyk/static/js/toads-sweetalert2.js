@@ -1,12 +1,12 @@
 /**
  * toads-sweetalert2.js
- * Sistema de notificaciones tipo Toast para Panadería WYK
+ * Sistema de notificaciones inteligente para Panadería WYK
  */
 
 document.addEventListener('DOMContentLoaded', function() {
     const loginForm = document.getElementById('login-form');
 
-    // 1. VALIDACIÓN DEL LADO DEL CLIENTE (Antes de enviar al servidor)
+    // 1. VALIDACIÓN DEL LADO DEL CLIENTE (Toast naranja en la esquina)
     if (loginForm) {
         loginForm.addEventListener('submit', function(e) {
             const userInput = loginForm.querySelector('input[name="username"]');
@@ -14,7 +14,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
             let errorMsg = "";
 
-            // Limpieza y validación básica
             if (!userInput.value.trim() || !passwordInput.value.trim()) {
                 errorMsg = "Por favor, completa todos los campos.";
             }
@@ -22,7 +21,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 errorMsg = "El número de documento debe contener solo números.";
             }
 
-            // Si hay error de campos, lanzamos el Toast naranja
             if (errorMsg) {
                 e.preventDefault();
                 Swal.fire({
@@ -31,14 +29,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     title: errorMsg,
                     position: "top-end",
                     showConfirmButton: false,
+                    showCloseButton: true, // Permite cerrar manualmente
                     timer: 3000,
                     timerProgressBar: true,
-                    background: '#f5a623', // Naranja corporativo
-                    color: '#fff',         // Texto blanco
-                    iconColor: '#fff',     // Icono blanco
+                    pauseOnHover: true,    // Detiene el tiempo al pasar el mouse
+                    background: '#f5a623',
+                    color: '#fff',
+                    iconColor: '#fff',
                     didOpen: (toast) => {
-                        toast.onmouseenter = Swal.stopTimer;
-                        toast.onmouseleave = Swal.resumeTimer;
+                        toast.addEventListener('mouseenter', Swal.stopTimer)
+                        toast.addEventListener('mouseleave', Swal.resumeTimer)
                     }
                 });
             }
@@ -46,10 +46,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// 2. MANEJO DE MENSAJES QUE VIENEN DESDE DJANGO (Backend)
+// 2. MANEJO DE MENSAJES DESDE EL BACKEND (Inteligente)
 if (typeof Swal !== 'undefined') {
 
-    // Toast de ÉXITO (Verde Panadería)
+    // --- MANEJO DE ÉXITO ---
     if (typeof successMessage !== 'undefined' && successMessage && successMessage.trim() !== "") {
         Swal.fire({
             toast: true,
@@ -57,35 +57,59 @@ if (typeof Swal !== 'undefined') {
             title: successMessage,
             position: "top-end",
             showConfirmButton: false,
+            showCloseButton: true,
             timer: 3000,
             timerProgressBar: true,
-            background: '#28a745', // Verde éxito
+            pauseOnHover: true,
+            background: '#28a745',
             color: '#fff',
             iconColor: '#fff',
             didOpen: (toast) => {
-                toast.onmouseenter = Swal.stopTimer;
-                toast.onmouseleave = Swal.resumeTimer;
+                toast.addEventListener('mouseenter', Swal.stopTimer)
+                toast.addEventListener('mouseleave', Swal.resumeTimer)
             }
         });
     }
 
-    // Toast de ERROR de Servidor/Credenciales (Naranja Corporativo)
+    // --- MANEJO DE ERRORES (Diferenciado por gravedad) ---
     if (typeof errorMessage !== 'undefined' && errorMessage && errorMessage.trim() !== "") {
-        Swal.fire({
-            toast: true,
-            icon: "warning", // Usamos warning para mantener el esquema naranja/blanco
-            title: errorMessage,
-            position: "top-end",
-            showConfirmButton: false,
-            timer: 4000, // Un segundo extra para errores de acceso
-            timerProgressBar: true,
-            background: '#f5a623', // Naranja corporativo
-            color: '#fff',         // Texto blanco
-            iconColor: '#fff',     // Icono blanco
-            didOpen: (toast) => {
-                toast.onmouseenter = Swal.stopTimer;
-                toast.onmouseleave = Swal.resumeTimer;
-            }
-        });
+
+        const esAccesoDenegado = errorMessage.toLowerCase().includes("denegado") ||
+                                 errorMessage.toLowerCase().includes("inactiva") ||
+                                 errorMessage.toLowerCase().includes("administrador");
+
+        if (esAccesoDenegado) {
+            // ALERTA CENTRAL GRANDE (X Roja) - Para Usuario Inactivo
+            Swal.fire({
+                icon: 'error',
+                title: 'Error de acceso',
+                text: errorMessage,
+                confirmButtonColor: '#f5a623',
+                confirmButtonText: 'OK',
+                background: '#fff',
+                color: '#000',
+                allowOutsideClick: false
+            });
+        } else {
+            // TOAST EN LA ESQUINA (Naranja) - Para Credenciales Incorrectas
+            Swal.fire({
+                toast: true,
+                icon: "warning",
+                title: errorMessage,
+                position: "top-end",
+                showConfirmButton: false,
+                showCloseButton: true,
+                timer: 4000,
+                timerProgressBar: true,
+                pauseOnHover: true, // Detiene el tiempo al pasar el mouse
+                background: '#f5a623',
+                color: '#fff',
+                iconColor: '#fff',
+                didOpen: (toast) => {
+                    toast.addEventListener('mouseenter', Swal.stopTimer)
+                    toast.addEventListener('mouseleave', Swal.resumeTimer)
+                }
+            });
+        }
     }
 }

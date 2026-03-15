@@ -88,6 +88,13 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = 'num_doc'
     REQUIRED_FIELDS = ['nombre', 'email_usuario', 'tel_usuario']
 
+    # --- Metodo de sincronizacion estado inactivo ---
+    def save(self, *args, **kwargs):
+        # Si el usuario es desactivado administrativamente,
+        # se le quita el permiso de acceso automáticamente.
+        self.is_active = self.estado_usuario
+        super().save(*args, **kwargs)
+
     class Meta:
         managed = False
         db_table = 'usuario'
