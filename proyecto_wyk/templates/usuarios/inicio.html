@@ -13,14 +13,6 @@
         <div class="s">Buen día, <span class="n">{{ user.nombre }}</span></div>
         <div class="subtitle">Panel de control de Panadería WYK</div>
     </div>
-    <div class="header-actions">
-        <button class="action-btn" id="themeToggle" title="Cambiar tema">
-            <i class="fas fa-moon"></i>
-        </button>
-        <div class="user-avatar" id="userAvatar">
-            {{ user.nombre|slice:":1"|upper }}
-        </div>
-    </div>
 </div>
 
 <div class="profile-card">
@@ -35,12 +27,18 @@
 
     <div class="contact-info">
         <div class="contact-item">
-            <span class="contact-label"><i class="fas fa-envelope"></i> Email</span>
-            <span class="contact-value">{{ user.email_usuario }}</span>
-        </div>
-        <div class="contact-item">
             <span class="contact-label"><i class="fas fa-id-card"></i> Doc</span>
             <span class="contact-value">{{ user.num_doc }}</span>
+        </div>
+
+        <div class="contact-item">
+            <span class="contact-label"><i class="fas fa-phone"></i> Teléfono</span>
+            <span class="contact-value">+57 {{ user.tel_usuario }}</span>
+        </div>
+
+        <div class="contact-item">
+            <span class="contact-label"><i class="fas fa-envelope"></i> Email</span>
+            <span class="contact-value">{{ user.email_usuario }}</span>
         </div>
     </div>
 </div>
