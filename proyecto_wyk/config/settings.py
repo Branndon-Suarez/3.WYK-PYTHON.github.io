@@ -135,6 +135,11 @@ STATICFILES_DIRS = [
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Configuración de rutas de autenticación
+# El nombre 'login' debe coincidir con el name='login' de tu urls.py
 LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = 'inicio'  # Temporalmente al admin para que no te dé error 404
+
+# A dónde va el usuario después de loguearse correctamente
+LOGIN_REDIRECT_URL = 'inicio'
+
+# A dónde va el usuario después de cerrar sesión (Logout)
 LOGOUT_REDIRECT_URL = 'login'

@@ -16,17 +16,17 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from django.views.generic import RedirectView
+from usuarios import views  # Importamos tus nuevas vistas
 
 urlpatterns = [
     path('admin/', admin.site.urls),
 
-    # Gestión de autenticación (Login/Logout)
-    path('accounts/', include('django.contrib.auth.urls')),
+    # 1. Autenticación Personalizada (Tu diseño naranja)
+    path('', views.login_view, name='login'),
+    path('logout/', views.logout_view, name='logout'),
+    path('inicio/', views.inicio, name='inicio'),
 
-    # Rutas de tu aplicación de usuarios (Dashboard)
+    # 2. Rutas de Roles y otros (Si prefieres tenerlas en la app)
+    # Esto busca el archivo usuarios/urls.py
     path('usuarios/', include('usuarios.urls')),
-
-    # Redirección de la raíz al login
-    path('', RedirectView.as_view(url='/accounts/login/', permanent=True)),
 ]

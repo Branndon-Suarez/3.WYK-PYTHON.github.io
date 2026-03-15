@@ -2,8 +2,40 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import ProtectedError
+# --- NUEVAS IMPORTACIONES PARA EL LOGIN ---
+from django.contrib.auth import login as auth_login, logout as auth_logout
+from .forms import LoginForm
 from .models import Rol
 
+
+# ------------------------------ AUTENTICACIÓN ------------------------------
+
+def login_view(request):
+    # Si ya está logueado, no tiene sentido ver el login, va al inicio
+    if request.user.is_authenticated:
+        return redirect('inicio')
+
+    if request.method == 'POST':
+        form = LoginForm(data=request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            auth_login(request, user)
+            return redirect('inicio')
+        else:
+            # Este mensaje lo atrapará el script que pusimos en tu login.html
+            messages.error(request, "Número de documento o contraseña incorrectos.")
+    else:
+        form = LoginForm()
+
+    return render(request, 'registration/login.html', {'form': form})
+
+
+def logout_view(request):
+    auth_logout(request)
+    return redirect('login')
+
+
+# ------------------------------ INICIO ------------------------------
 @login_required
 def inicio(request):
     # Django buscará este archivo en la carpeta global templates/inicio.html

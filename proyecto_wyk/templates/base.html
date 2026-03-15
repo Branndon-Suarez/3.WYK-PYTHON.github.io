@@ -34,7 +34,10 @@
                 </li>
                 <li class="spacer"></li>
                 <li>
-                    {% csrf_token %}
+                    <form id="logout-form" action="{% url 'logout' %}" method="post" style="display: none;">
+                        {% csrf_token %}
+                    </form>
+
                     <a href="#" id="logout-link" class="nav-btn" title="Cerrar Sesión">
                         <i class="fas fa-sign-out-alt"></i>
                     </a>

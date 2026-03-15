@@ -67,16 +67,21 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     email_usuario = models.EmailField(max_length=50, unique=True, db_column='email_usuario')
     fecha_registro = models.DateTimeField(db_column='fecha_registro', auto_now_add=True)
 
-    # CAMPO ESTRICTO: Sin null=True. Obliga a tener un Rol.
     rol_fk_usuario = models.ForeignKey(
         Rol,
         on_delete=models.PROTECT,
         db_column='rol_fk_usuario'
     )
 
+    # Mapeamos cada campo a su columna exacta del SQL
+    # Usamos estado_usuario como el nombre principal para tu lógica de negocio
     estado_usuario = models.BooleanField(default=True, db_column='estado_usuario')
-    is_active = models.BooleanField(default=True)
-    is_staff = models.BooleanField(default=False)
+
+    # Django usará estos para los permisos y el login
+    is_active = models.BooleanField(default=True, db_column='is_active')
+    is_staff = models.BooleanField(default=False, db_column='is_staff')
+    is_superuser = models.BooleanField(default=False, db_column='is_superuser')
+    last_login = models.DateTimeField(null=True, blank=True, db_column='last_login')
 
     objects = UsuarioManager()
 
