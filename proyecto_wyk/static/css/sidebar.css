@@ -1,141 +1,204 @@
-/* --------------------- Sidebar --------------------- */
+/* VARIABLES PANADERÍA UNIFICADAS */
 :root {
-    --primary: #933e0d;
-    --primary-2: #5e2507;
-    --primary-3: #b5a28f;
-    --color-hover-table: #d1bfae;
-    --accent: #f59e0b;
-    --bg: #f6f7ff;
-    --text: #0f172a;
-    --muted: #64748b;
-    --ring: #e2e8f0;
-    --shadow: 0 10px 30px rgba(24, 24, 48, .08);
-    --radius-xl: 18px;
-    --radius-2xl: 22px;
+    --primary: #0b0500;    /* Fondo oscuro idéntico a tu dashboard */
+    --accent: #f59e0b;     /* Dorado/Naranja WYK */
+    --bg-dark: #0b0500;    /* Fondo general */
+    --text-white: #ffffff;
+    --sidebar-width: 260px;
+    --sidebar-collapsed: 80px;
+    --hover-color: rgba(245, 158, 11, 0.1);
 }
 
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+}
+
+body {
+    background-color: var(--bg-dark);
+}
+
+.app-container {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* SIDEBAR */
 .sidebar {
+    width: var(--sidebar-width);
+    min-width: var(--sidebar-width);
+    height: 100vh;
+    background-color: var(--primary);
+    color: var(--text-white);
+    display: flex;
+    flex-direction: column;
     position: sticky;
     top: 0;
-    width: 80px;
-    height: 100vh;
-    background: linear-gradient(180deg, var(--primary), var(--primary-2));
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 16px;
-    padding: 18px 12px;
-    color: #fff;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 1000;
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.sidebar .logo {
-    width: 52px;
-    height: 52px;
-    border-radius: 16px;
-    background: linear-gradient(145deg, #f59e0b, #fb923c);
-    display: grid;
-    place-items: center;
-    font-size: 26px;
-    box-shadow: var(--shadow);
+/* ESTADO COLAPSADO (Cerrado) */
+.sidebar.collapsed {
+    width: var(--sidebar-collapsed);
+    min-width: var(--sidebar-collapsed);
 }
 
-.sidebar ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
+/* CABECERA DEL SIDEBAR */
+.sidebar-header {
+    padding: 25px 15px;
     display: flex;
-    flex-direction: column;
-    gap: 16px;
-    width: 100%;
+    align-items: center;
+    gap: 12px;
+    height: 80px; /* Altura fija para evitar saltos */
 }
 
-.sidebar .nav-btn {
-    all: unset;
-    /* Se eliminan estilos por defecto del <button> */
-    width: 48px;
-    height: 48px;
-    border-radius: 16px;
-    display: grid;
-    place-items: center;
-    color: #fff;
-    text-decoration: none;
-    transition: .2s;
+.toggle-btn-sidebar {
+    background: none;
+    border: none;
+    color: var(--text-white);
+    font-size: 1.3rem;
     cursor: pointer;
-}
-
-.sidebar .nav-btn:hover {
-    background: rgba(255, 255, 255, .12);
-    transform: translateY(-2px);
-}
-
-.sidebar .nav-btn.active {
-    background: rgba(255, 255, 255, .2);
-}
-
-.sidebar .nav-btn i {
-    pointer-events: none;
-}
-
-/* Submenús */
-.sidebar li {
-    position: relative;
-}
-
-.sidebar .submenu {
-    position: absolute;
-    top: -50;
-    left: 70px;
-    /* aparece a la derecha del menú principal */
-    background: linear-gradient(180deg, var(--primary), var(--primary-2));
-    padding: 8px 0;
-    border: #0f172a 1px solid;
-    border-radius: var(--radius-xl);
-    box-shadow: var(--shadow);
-    display: none;
-    flex-direction: column;
-    min-width: 180px;
-    z-index: 1001;
-    opacity: 0;
-    transition: opacity 0.2s ease-in-out;
-}
-
-/*Para mostrar el submenu al hacer click*/
-.has-submenu.open>.submenu {
     display: flex;
-    opacity: 1;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.3s;
 }
 
-.sidebar .submenu li a {
+.toggle-btn-sidebar:hover {
+    color: var(--accent);
+}
+
+.sidebar-logo {
+    font-size: 24px;
+    min-width: 35px;
+    display: flex;
+    justify-content: center;
+}
+
+.sidebar-title h3 {
+    font-size: 1.1rem;
+    color: var(--accent);
+    white-space: nowrap;
+}
+
+/* NAVEGACIÓN */
+.sidebar-nav {
+    flex: 1;
+    padding: 10px;
+}
+
+.nav-section {
+    font-size: 0.7rem;
+    font-weight: 700;
+    margin: 20px 15px 10px;
+    color: var(--accent);
+    opacity: 0.6;
+    letter-spacing: 1px;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    color: var(--text-white);
+    text-decoration: none;
+    border-radius: 12px;
+    margin-bottom: 5px;
+    transition: all 0.3s;
+}
+
+.nav-item i {
+    min-width: 30px;
+    font-size: 18px;
+    display: flex;
+    justify-content: center;
+}
+
+.nav-item span {
+    margin-left: 10px;
+    white-space: nowrap;
+}
+
+.nav-item:hover {
+    background-color: var(--hover-color);
+    color: var(--accent);
+}
+
+.nav-item.active {
+    background-color: var(--accent);
+    color: #000 !important;
+    font-weight: 600;
+}
+
+/* PIE DE PÁGINA */
+.sidebar-footer {
+    padding: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.btn-logout {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 8px 14px;
-    color: #fff;
+    color: #ff8a8a;
     text-decoration: none;
-    font-size: 14px;
-    border-radius: 10px;
-    transition: 0.2s;
+    padding: 12px;
+    border-radius: 12px;
+    transition: 0.3s;
 }
 
-.sidebar .submenu li a:hover {
-    background: rgba(255, 255, 255, .2);
+.btn-logout:hover {
+    background: rgba(255, 138, 138, 0.1);
 }
 
-/* --------------------- Sidebar --------------------- */
+/* --- REGLAS CUANDO ESTÁ CERRADO (COLLAPSED) --- */
 
-/* --------------------- Responsive --------------------- */
-/*RESPONSIVE PARA MÓVIL-TABLET*/
-@media (min-width: 0px) and (max-width: 1023px) {
-    .sidebar {
-        display: none;
-    }
+/* 1. Escondemos el Pan y el Texto del Título */
+.sidebar.collapsed .sidebar-logo,
+.sidebar.collapsed .sidebar-title {
+    display: none;
 }
 
-/*RESPONSIVE PARA PC*/
-@media (min-width: 1024px) {
-    .sidebar {
-        display: flex;
-    }
+/* 2. Centramos la hamburguesa */
+.sidebar.collapsed .sidebar-header {
+    justify-content: center;
+    padding: 25px 0;
+}
+
+/* 3. Centramos los iconos del menú */
+.sidebar.collapsed .nav-item {
+    justify-content: center;
+    padding: 15px 0;
+}
+
+.sidebar.collapsed .nav-item i {
+    margin: 0;
+    font-size: 20px;
+}
+
+/* 4. Ocultamos etiquetas de texto y secciones */
+.sidebar.collapsed .nav-item span,
+.sidebar.collapsed .nav-section,
+.sidebar.collapsed .btn-logout span {
+    display: none;
+}
+
+/* 5. Centramos el botón de cerrar sesión */
+.sidebar.collapsed .btn-logout {
+    justify-content: center;
+}
+
+/* CONTENIDO PRINCIPAL */
+.main-content {
+    flex-grow: 1;
+    background-color: var(--bg-dark);
+    transition: all 0.3s ease;
+}
+
+.content-body {
+    padding: 30px;
 }

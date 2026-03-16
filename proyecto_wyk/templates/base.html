@@ -4,69 +4,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Panadería WYK{% endblock %}</title>
+    <title>{% block title %}WYK Express - Dashboard{% endblock %}</title>
 
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'css/sidebar.css' %}">
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
-    <script src="https://unpkg.com/feather-icons"></script>
 
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <div class="app">
-        <nav class="sidebar">
-            <div class="logo">🍞</div>
-            <ul>
-                <li>
-                    <a href="{% url 'inicio' %}"
-                       class="nav-btn {% if request.resolver_match.url_name == 'inicio' %}active{% endif %}"
-                       title="Inicio">
-                        <i class="fas fa-home"></i>
-                    </a>
-                </li>
 
-                <li class="has-submenu">
-                    <a href="#" class="nav-btn" title="Gestión" aria-expanded="false">
-                        <i class="fas fa-box"></i>
-                    </a>
-                    <ul class="submenu" aria-hidden="true">
-                        <li><a href="#"><i class="fas fa-cookie"></i> Productos</a></li>
-                        <li><a href="#"><i class="fas fa-users-cog"></i> Empleados</a></li>
-                    </ul>
-                </li>
+    <div class="app-container">
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <button class="toggle-btn-sidebar" onclick="toggleSidebar()" title="Expandir/Colapsar">
+                    <i class="fa fa-bars"></i>
+                </button>
+                <div class="sidebar-logo">🍞</div>
+                <div class="sidebar-title">
+                    <h3>WYK Express</h3>
+                    <span>Sistema de Gestión</span>
+                </div>
+            </div>
 
-                <li class="spacer" style="flex: 1;"></li>
+            <div class="sidebar-nav">
+                <div class="nav-section">PRINCIPAL</div>
 
-                <li>
-                    <form id="logout-form" action="{% url 'logout' %}" method="post" style="display: none;">
-                        {% csrf_token %}
-                    </form>
+                <a href="{% url 'inicio' %}" class="nav-item {% if request.resolver_match.url_name == 'inicio' %}active{% endif %}">
+                    <i class="fa fa-home"></i>
+                    <span>Dashboard</span>
+                </a>
 
-                    <a href="#" id="logout-link" class="nav-btn" title="Cerrar Sesión" style="color: #ff8a8a;">
-                        <i class="fas fa-sign-out-alt"></i>
-                    </a>
-                </li>
-            </ul>
+                <div class="nav-section">GESTIÓN</div>
+
+                <a href="javascript:void(0)" class="nav-item" onclick="showModule('usuarios')">
+                    <i class="fa fa-users"></i>
+                    <span>Usuarios</span>
+                </a>
+
+                <a href="javascript:void(0)" class="nav-item" onclick="showModule('productos')">
+                    <i class="fa fa-box"></i>
+                    <span>Productos</span>
+                </a>
+            </div>
+
+            <div class="sidebar-footer">
+                <form id="logout-form" action="{% url 'logout' %}" method="post" style="display: none;">
+                    {% csrf_token %}
+                </form>
+                <a href="javascript:void(0)" id="logout-link" class="btn-logout">
+                    <i class="fa fa-sign-out-alt"></i>
+                    <span>Cerrar Sesión</span>
+                </a>
+            </div>
         </nav>
 
         <main class="main-content">
-            {% block content %}{% endblock %}
+            <section class="content-body">
+                {% block content %}{% endblock %}
+            </section>
         </main>
     </div>
 
     <script src="{% static 'js/sweetalert2.all.min.js' %}"></script>
     <script src="{% static 'js/sidebar.js' %}"></script>
     <script src="{% static 'js/logout.js' %}"></script>
-
     {% block extra_js %}{% endblock %}
-
-    <script>
-        // Inicializa los iconos Feather si se usan en el sidebar.js
-        if (typeof feather !== 'undefined') {
-            feather.replace();
-        }
-    </script>
 </body>
 </html>

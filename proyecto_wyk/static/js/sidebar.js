@@ -1,50 +1,33 @@
-document.addEventListener("DOMContentLoaded", () => {
-  if (window.feather) feather.replace();
+function showModule(name) {
+    // 1. Desactivar todos los módulos y botones
+    document.querySelectorAll('.module').forEach(m => m.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
 
-  const buttons = document.querySelectorAll(".has-submenu > .nav-btn");
+    // 2. Activar el seleccionado
+    const target = document.getElementById('mod-' + name);
+    if (target) target.classList.add('active');
 
-  buttons.forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      e.preventDefault(); // Prevenir comportamiento por defecto como boton 'submit' y recargando la página.
+    // 3. Activar botón del menú
+    const btn = document.querySelector(`.nav-item[onclick*="${name}"]`);
+    if (btn) btn.classList.add('active');
 
-      const parent = btn.closest(".has-submenu"); // 'closest' llama al ascendente más cercano (padre, abuelo, bisabuelo...) que contiene el submenu, osea el <li class="has-submenu" title="...">
-      const submenu = parent.querySelector(".submenu");// Ya especificado el padre, osea el <li>, buscamos su submenu correspondiente al boton que se le hizo click.
+    // 4. Cambiar título
+    const titles = { dashboard: 'Dashboard', usuarios: 'Usuarios', productos: 'Productos' };
+    document.getElementById('pageTitle').textContent = titles[name] || name;
+}
 
-      /*--- Alternar submenu actual con toggle ---*/
-      //Agregar o quitar la clase 'open' al <li class="has-submenu">
-      const isOpen = parent.classList.toggle("open");
-      //Actualizar atributos aria
-      btn.setAttribute("aria-expanded", isOpen ? "true" : "false");
-      submenu.setAttribute("aria-hidden", isOpen ? "false" : "true");
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('collapsed');
+}
 
-      /*--- Cerrar otros submenus ---*/
-      //Seleccionar todos los <li class="has-submenu .open"> mediante un ciclo 'forEach' y cada elemento lo llamamos 'openItem'
-      document.querySelectorAll(".has-submenu.open").forEach((openItem) => {
-        if (openItem !== parent) {
-          openItem.classList.remove("open");//Cerrar el otro submenu
-          //Actualizar atributos aria del otro submenu
-          const otherBtn = openItem.querySelector(".nav-btn");
-          if (otherBtn) otherBtn.setAttribute("aria-expanded", "false");
-          const otherSub = openItem.querySelector(".submenu");
-          if (otherSub) otherSub.setAttribute("aria-hidden", "true");
-        }
-      });
-    });
-  });
+function updateDateTime() {
+    const now = new Date();
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+    const el = document.getElementById('dateTime');
+    if (el) el.textContent = now.toLocaleDateString('es-CO', options);
+}
 
-  /*--- Cerrar si hago click fuera del sidebar ---*/
-  document.addEventListener("click", (e) => {
-
-    // 'target' llama el elemento donde se hizo click, si no es un elemento dentro del sidebar
-    if (!e.target.closest(".sidebar")) {
-      document.querySelectorAll(".has-submenu.open").forEach((item) => {
-        item.classList.remove("open");//Cerrar el submenu actual
-        //Actualizar atributos aria del submenu actual
-        const btn = item.querySelector(".nav-btn");
-        if (btn) btn.setAttribute("aria-expanded", "false");
-        const sub = item.querySelector(".submenu");
-        if (sub) sub.setAttribute("aria-hidden", "true");
-      });
-    }
-  });
+document.addEventListener('DOMContentLoaded', () => {
+    updateDateTime();
+    setInterval(updateDateTime, 60000);
 });
