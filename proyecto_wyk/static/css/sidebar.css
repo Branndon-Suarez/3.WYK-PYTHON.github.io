@@ -49,11 +49,11 @@ body {
 
 /* CABECERA DEL SIDEBAR */
 .sidebar-header {
-    padding: 25px 15px;
+    padding: 20px 15px;
     display: flex;
     align-items: center;
-    gap: 12px;
-    height: 80px;
+    gap: 15px;
+    height: 100px; /* Altura aumentada para que el logo respire */
 }
 
 .toggle-btn-sidebar {
@@ -73,24 +73,25 @@ body {
 }
 
 .sidebar-logo {
-    min-width: 40px;
+    min-width: 55px; /* Ajustado al nuevo tamaño del logo */
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
-/* Ajuste específico para la nueva imagen del logo */
+/* Ajuste específico para el logo más grande */
 .sidebar-logo img {
-    width: 35px;
+    width: 55px;
     height: auto;
     object-fit: contain;
-    transition: all 0.3s;
+    transition: all 0.3s ease;
 }
 
 .sidebar-title h3 {
     font-size: 1.1rem;
     color: var(--accent);
     white-space: nowrap;
+    margin-bottom: 2px;
 }
 
 .sidebar-title span {
