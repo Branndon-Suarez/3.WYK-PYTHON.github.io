@@ -53,7 +53,7 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
-    height: 80px; /* Altura fija para evitar saltos */
+    height: 80px;
 }
 
 .toggle-btn-sidebar {
@@ -73,15 +73,30 @@ body {
 }
 
 .sidebar-logo {
-    font-size: 24px;
-    min-width: 35px;
+    min-width: 40px;
     display: flex;
     justify-content: center;
+    align-items: center;
+}
+
+/* Ajuste específico para la nueva imagen del logo */
+.sidebar-logo img {
+    width: 35px;
+    height: auto;
+    object-fit: contain;
+    transition: all 0.3s;
 }
 
 .sidebar-title h3 {
     font-size: 1.1rem;
     color: var(--accent);
+    white-space: nowrap;
+}
+
+.sidebar-title span {
+    font-size: 0.75rem;
+    display: block;
+    opacity: 0.7;
     white-space: nowrap;
 }
 
@@ -157,19 +172,17 @@ body {
 
 /* --- REGLAS CUANDO ESTÁ CERRADO (COLLAPSED) --- */
 
-/* 1. Escondemos el Pan y el Texto del Título */
+/* Escondemos el contenedor del logo y el título */
 .sidebar.collapsed .sidebar-logo,
 .sidebar.collapsed .sidebar-title {
     display: none;
 }
 
-/* 2. Centramos la hamburguesa */
 .sidebar.collapsed .sidebar-header {
     justify-content: center;
     padding: 25px 0;
 }
 
-/* 3. Centramos los iconos del menú */
 .sidebar.collapsed .nav-item {
     justify-content: center;
     padding: 15px 0;
@@ -180,14 +193,12 @@ body {
     font-size: 20px;
 }
 
-/* 4. Ocultamos etiquetas de texto y secciones */
 .sidebar.collapsed .nav-item span,
 .sidebar.collapsed .nav-section,
 .sidebar.collapsed .btn-logout span {
     display: none;
 }
 
-/* 5. Centramos el botón de cerrar sesión */
 .sidebar.collapsed .btn-logout {
     justify-content: center;
 }
