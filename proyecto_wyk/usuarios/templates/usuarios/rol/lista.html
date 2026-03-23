@@ -29,7 +29,6 @@
 
         .table-header-actions {
             width: 100%;
-            /* Ajustamos este max-width para que el botón no flote tan lejos de la tabla justa */
             max-width: fit-content;
             display: flex;
             justify-content: flex-end;
@@ -48,14 +47,13 @@
             transition: var(--transition);
         }
 
-        /* AJUSTE SOLICITADO: Tarjeta justa al contenido */
         .card-wyk {
             background-color: var(--background-secondary) !important;
             border-radius: var(--border-radius-lg);
             padding: 20px;
             border: 1px solid rgba(245, 166, 35, 0.15);
             box-shadow: var(--shadow-premium);
-            display: inline-table; /* Cambiado para que se ajuste exactamente */
+            display: inline-table;
             max-width: 100%;
         }
 
@@ -70,7 +68,7 @@
             text-transform: uppercase;
             font-size: 0.8rem;
             letter-spacing: 1px;
-            white-space: nowrap; /* Evita que los títulos se amontonen */
+            white-space: nowrap;
         }
 
         .table-wyk thead th:first-child { border-radius: 12px 0 0 12px; }
@@ -178,6 +176,21 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+    /* 1. MOSTRAR MENSAJES DE ÉXITO O ERROR (Django Messages) */
+    {% if messages %}
+        {% for message in messages %}
+            Swal.fire({
+                icon: "{% if message.tags == 'error' %}error{% else %}success{% endif %}",
+                title: "{% if message.tags == 'error' %}¡Atención!{% else %}¡Hecho!{% endif %}",
+                text: "{{ message }}",
+                background: '#1a0a00',
+                color: '#fff',
+                confirmButtonColor: '#f5a623'
+            });
+        {% endfor %}
+    {% endif %}
+
+    /* 2. CONFIRMACIÓN DE ELIMINACIÓN */
     function confirmarEliminar(id, nombre) {
         Swal.fire({
             title: `¿Eliminar el rol ${nombre}?`,
