@@ -22,7 +22,7 @@
                 </button>
 
                 <div class="sidebar-logo">
-                    <img src="{% static 'images/imgLogin/logo.png' %}" alt="Logo WYK" style="width: 50px; height: auto;">
+                    <img src="{% static 'images/imgLogin/logo.png' %}" alt="Logo WYK" >
                 </div>
 
                 <div class="sidebar-title">
@@ -39,7 +39,12 @@
                     <span>Dashboard</span>
                 </a>
 
-                <div class="nav-section">GESTIÓN</div>
+                <div class="nav-section">GESTIÓN USUARIOS</div>
+
+                <a href="{% url 'lista_roles' %}" class="nav-item {% if 'roles' in request.path %}active{% endif %}">
+                    <i class="fa fa-user-shield"></i>
+                    <span>Roles</span>
+                </a>
 
                 <a href="javascript:void(0)" class="nav-item" onclick="showModule('usuarios')">
                     <i class="fa fa-users"></i>

@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Roles - WYK{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/dashboard-inicio.css' %}">
+
+    <style>
+        .container-custom {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 0;
+            margin: 0;
+            width: 100%;
+        }
+
+        .header {
+            width: 100% !important;
+            max-width: none !important;
+            margin-bottom: 30px !important;
+        }
+
+        .header .n {
+            color: #ffffff !important;
+            font-weight: 800 !important;
+        }
+
+        .table-header-actions {
+            width: 100%;
+            /* Ajustamos este max-width para que el botón no flote tan lejos de la tabla justa */
+            max-width: fit-content;
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 15px;
+        }
+
+        .btn-nuevo {
+            background-color: var(--primary-color);
+            color: #000;
+            font-weight: 800;
+            border-radius: 12px;
+            padding: 10px 20px;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        /* AJUSTE SOLICITADO: Tarjeta justa al contenido */
+        .card-wyk {
+            background-color: var(--background-secondary) !important;
+            border-radius: var(--border-radius-lg);
+            padding: 20px;
+            border: 1px solid rgba(245, 166, 35, 0.15);
+            box-shadow: var(--shadow-premium);
+            display: inline-table; /* Cambiado para que se ajuste exactamente */
+            max-width: 100%;
+        }
+
+        .table-wyk thead tr {
+            background: linear-gradient(90deg, #2a1200 0%, #4d260a 100%);
+        }
+
+        .table-wyk thead th {
+            color: var(--primary-color) !important;
+            border: none !important;
+            padding: 15px 25px !important;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            white-space: nowrap; /* Evita que los títulos se amontonen */
+        }
+
+        .table-wyk thead th:first-child { border-radius: 12px 0 0 12px; }
+        .table-wyk thead th:last-child { border-radius: 0 12px 12px 0; }
+
+        .table-wyk td {
+            color: rgba(255, 255, 255, 0.85) !important;
+            padding: 15px 25px !important;
+            vertical-align: middle;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            white-space: nowrap;
+        }
+
+        .badge-nivel {
+            background: transparent;
+            color: var(--primary-color);
+            border: 1px solid rgba(245, 166, 35, 0.4);
+            padding: 4px 15px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+        }
+
+        .btn-action {
+            width: 35px;
+            height: 35px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            transition: var(--transition);
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-action:hover {
+            background: var(--primary-color);
+            color: #000;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container-custom fade-in">
+    <div class="header">
+        <div class="greeting">
+            <div class="s">Gestión de <span class="n">Roles</span></div>
+            <div class="subtitle" style="opacity: 0.8; font-size: 0.9rem;">Panel administrativo de accesos para el equipo</div>
+        </div>
+    </div>
+
+    <div class="table-header-actions">
+        <a href="{% url 'crear_rol' %}" class="btn-nuevo">
+            + Nuevo Rol
+        </a>
+    </div>
+
+    <div class="card-wyk">
+        <div class="table-responsive">
+            <table class="table table-wyk mb-0">
+                <thead>
+                    <tr>
+                        <th width="80" class="text-center">ID</th>
+                        <th>NOMBRE DEL ROL</th>
+                        <th class="text-center">NIVEL</th>
+                        <th class="text-center">ESTADO</th>
+                        <th class="text-center">ACCIONES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in roles %}
+                    <tr>
+                        <td class="text-center fw-bold" style="color: var(--primary-color);">{{ r.id_rol }}</td>
+                        <td>
+                            <div class="fw-bold text-white">{{ r.rol }}</div>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge-nivel">{{ r.get_clasificacion_display }}</span>
+                        </td>
+                        <td class="text-center">
+                            {% if r.estado_rol %}
+                                <span style="color: #44cc44; font-weight: 700;">Activo</span>
+                            {% else %}
+                                <span style="color: #ff5555; font-weight: 700;">Inactivo</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <a href="{% url 'editar_rol' r.id_rol %}" class="btn-action me-2">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <button type="button" onclick="confirmarEliminar('{{ r.id_rol }}', '{{ r.rol }}')" class="btn-action" style="color: #ff8a8a;">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    function confirmarEliminar(id, nombre) {
+        Swal.fire({
+            title: `¿Eliminar el rol ${nombre}?`,
+            text: "Esta acción no se puede deshacer.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#f5a623',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar',
+            background: '#1a0a00',
+            color: '#fff'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/usuarios/roles/eliminar/${id}/`;
+                const csrf = document.createElement('input');
+                csrf.type = 'hidden';
+                csrf.name = 'csrfmiddlewaretoken';
+                csrf.value = '{{ csrf_token }}';
+                form.appendChild(csrf);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        });
+    }
+</script>
+{% endblock %}

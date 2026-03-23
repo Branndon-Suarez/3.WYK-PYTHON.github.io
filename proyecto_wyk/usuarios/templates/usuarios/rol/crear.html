@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Nuevo Rol - WYK{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Variables Locales de Color Café */
+    :root {
+        --primary-wyk: #f5a623;
+        --cafe-profundo: #0f0600; /* Fondo de la interfaz */
+        --cafe-tarjeta: #1a0a00;  /* Fondo del formulario */
+        --radius-premium: 22px;
+    }
+
+    /* FORZAMOS EL FONDO CAFÉ SOLO EN EL CONTENIDO, SIN TOCAR EL SIDEBAR */
+    .main-content {
+        background-color: var(--cafe-profundo) !important;
+    }
+
+    /* Aseguramos que el body de esta página también use el café por si hay espacios libres */
+    body {
+        background-color: var(--cafe-profundo) !important;
+    }
+
+    .form-container-wyk {
+        max-width: 500px;
+        margin: 2rem auto;
+        background-color: var(--cafe-tarjeta) !important; /* Café claro tipo tarjeta */
+        border: 1px solid rgba(245, 166, 35, 0.15);
+        border-radius: var(--radius-premium);
+        padding: 40px;
+        box-shadow: 0 15px 45px rgba(0, 0, 0, 0.7);
+        transition: all 0.3s ease;
+    }
+
+    .form-container-wyk:hover {
+        border-color: var(--primary-wyk);
+    }
+
+    .form-label-wyk {
+        color: rgba(255, 255, 255, 0.4);
+        font-weight: 600;
+        font-size: 0.8rem;
+        margin-bottom: 8px;
+        display: block;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+    }
+
+    .form-control-wyk {
+        background: rgba(255, 255, 255, 0.03) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        color: #ffffff !important;
+        border-radius: 12px !important;
+        padding: 12px 15px !important;
+        transition: all 0.3s ease;
+    }
+
+    .form-control-wyk:focus {
+        border-color: var(--primary-wyk) !important;
+        box-shadow: 0 0 0 3px rgba(245, 166, 35, 0.1) !important;
+        background: rgba(255, 255, 255, 0.07) !important;
+    }
+
+    .btn-save-wyk {
+        background: var(--primary-wyk);
+        color: #000;
+        font-weight: 700;
+        border: none;
+        border-radius: 12px;
+        padding: 15px;
+        width: 100%;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-top: 10px;
+    }
+
+    .btn-save-wyk:hover {
+        background: #bd7a13;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(245, 166, 35, 0.3);
+    }
+
+    .btn-cancel-wyk {
+        background: transparent;
+        color: #ff8a8a;
+        border: 1px solid rgba(255, 138, 138, 0.2);
+        border-radius: 12px;
+        padding: 12px;
+        width: 100%;
+        transition: 0.3s;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+        margin-top: 15px;
+        font-size: 14px;
+    }
+
+    /* Estilo para el select y sus opciones */
+    select.form-control-wyk option {
+        background: var(--cafe-tarjeta);
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container fade-in">
+    <div class="header text-center mb-5" style="background-color: #bd7a13; padding: 25px; border-radius: 22px; border: 1px solid rgba(255,255,255,0.1);">
+        <h2 class="text-white fw-bold mb-0">Registrar <span style="color: #0f0600;">Nuevo Rol</span></h2>
+        <p class="mb-0" style="color: rgba(255,255,255,0.8); font-size: 0.9rem;">Define los niveles de acceso para el personal de la panadería.</p>
+    </div>
+
+    <div class="form-container-wyk">
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="mb-4">
+                <label class="form-label-wyk">Nombre del Rol</label>
+                <input type="text" name="rol" class="form-control-wyk form-control"
+                       placeholder="Ej: CAJERO" required style="text-transform: uppercase;">
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label-wyk">Nivel de Seguridad</label>
+                <select name="clasificacion" class="form-control-wyk form-select" required>
+                    <option value="" disabled selected>Seleccione una opción...</option>
+                    {% for valor, etiqueta in clasificaciones %}
+                        <option value="{{ valor }}">{{ etiqueta }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn-save-wyk">
+                    <i class="fas fa-check-circle me-2"></i> Confirmar y Guardar
+                </button>
+                <a href="{% url 'lista_roles' %}" class="btn-cancel-wyk">
+                    <i class="fas fa-times me-1"></i> Cancelar Registro
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -22,7 +22,6 @@ class Rol(models.Model):
 
 
 # ---------------------------------MANAGER PARA USUARIO---------------------------------
-# ---------------------------------MANAGER PARA USUARIO---------------------------------
 class UsuarioManager(BaseUserManager):
     def create_user(self, num_doc, password=None, **extra_fields):
         if not num_doc:
