@@ -182,7 +182,7 @@
             Swal.fire({
                 icon: "{% if message.tags == 'error' %}error{% else %}success{% endif %}",
                 title: "{% if message.tags == 'error' %}¡Atención!{% else %}¡Hecho!{% endif %}",
-                text: "{{ message }}",
+                html: "{{ message|safe }}",
                 background: '#1a0a00',
                 color: '#fff',
                 confirmButtonColor: '#f5a623'
@@ -207,7 +207,10 @@
             if (result.isConfirmed) {
                 const form = document.createElement('form');
                 form.method = 'POST';
-                form.action = `/usuarios/roles/eliminar/${id}/`;
+                // Usamos una pequeña trampa de reemplazo para que Django genere la URL base
+                let urlAction = "{% url 'eliminar_rol' 0 %}".replace('0', id);
+                form.action = urlAction;
+
                 const csrf = document.createElement('input');
                 csrf.type = 'hidden';
                 csrf.name = 'csrfmiddlewaretoken';

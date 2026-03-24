@@ -92,6 +92,7 @@
         align-items: center;
         justify-content: center;
         gap: 10px;
+        cursor: pointer;
     }
 
     .btn-save-wyk:hover {
@@ -147,12 +148,12 @@
     </div>
 
     <div class="form-container-wyk">
-        <form method="post">
+        <form method="post" id="formEditar">
             {% csrf_token %}
 
             <div class="mb-4">
                 <label class="form-label-wyk">Nombre del Rol</label>
-                <input type="text" name="rol" value="{{ rol.rol }}" class="form-control-wyk form-control"
+                <input type="text" name="rol" value="{{ rol.rol }}" id="rol_nombre" class="form-control-wyk form-control"
                        required style="text-transform: uppercase;">
             </div>
 
@@ -178,7 +179,7 @@
 
             <div class="row g-2 mt-4">
                 <div class="col-12">
-                    <button type="submit" class="btn-save-wyk">
+                    <button type="button" onclick="confirmarActualizar()" class="btn-save-wyk">
                         <i class="fas fa-sync-alt me-2"></i> Aplicar Cambios
                     </button>
                 </div>
@@ -191,4 +192,57 @@
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    /* --- DETECCIÓN DE MENSAJES DEL SERVIDOR (Aquí aparecerá el error de duplicado) --- */
+    {% if messages %}
+        {% for message in messages %}
+            Swal.fire({
+                icon: "{% if message.tags == 'error' %}error{% else %}success{% endif %}",
+                title: "{% if message.tags == 'error' %}¡Atención!{% else %}¡Hecho!{% endif %}",
+                text: "{{ message|safe }}",
+                background: '#1a0a00',
+                color: '#fff',
+                confirmButtonColor: '#f5a623'
+            });
+        {% endfor %}
+    {% endif %}
+
+    /* --- FUNCIÓN DE CONFIRMACIÓN ANTES DE ENVIAR --- */
+    function confirmarActualizar() {
+        const nombreRol = document.getElementById('rol_nombre').value.trim();
+
+        if (nombreRol === "") {
+            Swal.fire({
+                icon: 'error',
+                title: 'Campo obligatorio',
+                text: 'El nombre del rol no puede estar vacío.',
+                background: '#1a0a00',
+                color: '#fff',
+                confirmButtonColor: '#f5a623'
+            });
+            return;
+        }
+
+        Swal.fire({
+            title: '¿Guardar cambios?',
+            text: `Se actualizará la información del rol "${nombreRol.toUpperCase()}".`,
+            icon: 'info',
+            showCancelButton: true,
+            confirmButtonColor: '#f5a623',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Sí, actualizar',
+            cancelButtonText: 'Cancelar',
+            background: '#1a0a00',
+            color: '#fff'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('formEditar').submit();
+            }
+        });
+    }
+</script>
 {% endblock %}

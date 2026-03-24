@@ -26,7 +26,7 @@
     .form-container-wyk {
         max-width: 500px;
         margin: 2rem auto;
-        background-color: var(--cafe-tarjeta) !important; /* Café claro tipo tarjeta */
+        background-color: var(--cafe-tarjeta) !important;
         border: 1px solid rgba(245, 166, 35, 0.15);
         border-radius: var(--radius-premium);
         padding: 40px;
@@ -75,6 +75,7 @@
         text-transform: uppercase;
         letter-spacing: 1px;
         margin-top: 10px;
+        cursor: pointer;
     }
 
     .btn-save-wyk:hover {
@@ -98,7 +99,6 @@
         font-size: 14px;
     }
 
-    /* Estilo para el select y sus opciones */
     select.form-control-wyk option {
         background: var(--cafe-tarjeta);
         color: white;
@@ -114,18 +114,18 @@
     </div>
 
     <div class="form-container-wyk">
-        <form method="post">
+        <form method="post" id="formCrear">
             {% csrf_token %}
 
             <div class="mb-4">
                 <label class="form-label-wyk">Nombre del Rol</label>
-                <input type="text" name="rol" class="form-control-wyk form-control"
+                <input type="text" name="rol" id="id_rol" class="form-control-wyk form-control"
                        placeholder="Ej: CAJERO" required style="text-transform: uppercase;">
             </div>
 
             <div class="mb-4">
                 <label class="form-label-wyk">Nivel de Seguridad</label>
-                <select name="clasificacion" class="form-control-wyk form-select" required>
+                <select name="clasificacion" id="id_clasificacion" class="form-control-wyk form-select" required>
                     <option value="" disabled selected>Seleccione una opción...</option>
                     {% for valor, etiqueta in clasificaciones %}
                         <option value="{{ valor }}">{{ etiqueta }}</option>
@@ -134,7 +134,7 @@
             </div>
 
             <div class="mt-4">
-                <button type="submit" class="btn-save-wyk">
+                <button type="button" onclick="confirmarInsertar()" class="btn-save-wyk">
                     <i class="fas fa-check-circle me-2"></i> Confirmar y Guardar
                 </button>
                 <a href="{% url 'lista_roles' %}" class="btn-cancel-wyk">
@@ -144,4 +144,60 @@
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    /* 1. MANEJO DE MENSAJES DE ERROR DESDE EL SERVIDOR (Duplicados, etc.) */
+    {% if messages %}
+        {% for message in messages %}
+            Swal.fire({
+                icon: "{% if message.tags == 'error' %}error{% else %}success{% endif %}",
+                title: "{% if message.tags == 'error' %}¡Atención!{% else %}¡Hecho!{% endif %}",
+                text: "{{ message|safe }}",
+                background: '#1a0a00',
+                color: '#fff',
+                confirmButtonColor: '#f5a623'
+            });
+        {% endfor %}
+    {% endif %}
+
+    /* 2. VALIDACIÓN DE FRONT-END Y CONFIRMACIÓN */
+    function confirmarInsertar() {
+        const nombreRol = document.getElementById('id_rol').value.trim();
+        const nivelSeguridad = document.getElementById('id_clasificacion').value;
+
+        // Validar si los campos están vacíos
+        if (nombreRol === "" || nivelSeguridad === "") {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Campos incompletos',
+                text: 'Por favor, asegúrate de escribir un nombre y seleccionar un nivel de seguridad.',
+                background: '#1a0a00',
+                color: '#fff',
+                confirmButtonColor: '#f5a623'
+            });
+            return;
+        }
+
+        // Si están llenos, pedir confirmación
+        Swal.fire({
+            title: '¿Registrar nuevo rol?',
+            text: `¿Estás seguro de que deseas crear el rol "${nombreRol.toUpperCase()}"?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#f5a623',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Sí, registrar',
+            cancelButtonText: 'Cancelar',
+            background: '#1a0a00',
+            color: '#fff'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('formCrear').submit();
+            }
+        });
+    }
+</script>
 {% endblock %}

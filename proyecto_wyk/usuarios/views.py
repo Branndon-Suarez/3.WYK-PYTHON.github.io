@@ -62,19 +62,25 @@ def lista_roles(request):
 
 @login_required
 def crear_rol(request):
-    """Formulario de Creación: crear.html"""
+    """Formulario de Creación: crear.html con validación de duplicados"""
     if request.method == 'POST':
-        rol_nombre = request.POST.get('rol').upper()
+        rol_nombre = request.POST.get('rol', '').strip().upper()
         clasificacion = request.POST.get('clasificacion')
 
         if rol_nombre and clasificacion:
-            Rol.objects.create(
-                rol=rol_nombre,
-                clasificacion=clasificacion,
-                estado_rol=True
-            )
-            messages.success(request, f"Rol '{rol_nombre}' creado correctamente.")
-            return redirect('lista_roles')
+            # VALIDACIÓN: Verificar si el nombre ya existe
+            if Rol.objects.filter(rol=rol_nombre).exists():
+                messages.error(request, f"El nombre de rol '{rol_nombre}' ya está registrado. Intenta con otro.")
+            else:
+                Rol.objects.create(
+                    rol=rol_nombre,
+                    clasificacion=clasificacion,
+                    estado_rol=True
+                )
+                messages.success(request, f"Rol '{rol_nombre}' creado correctamente.")
+                return redirect('lista_roles')
+        else:
+            messages.error(request, "Todos los campos son obligatorios.")
 
     clasificaciones = Rol.Clasificacion.choices
     return render(request, 'usuarios/rol/crear.html', {'clasificaciones': clasificaciones})
@@ -82,36 +88,48 @@ def crear_rol(request):
 
 @login_required
 def editar_rol(request, id_rol):
-    """Formulario de Actualización: editar.html"""
+    """Formulario de Actualización: editar.html con validación de duplicados"""
     rol = get_object_or_404(Rol, id_rol=id_rol)
+    clasificaciones = Rol.Clasificacion.choices
 
     if request.method == 'POST':
-        rol.rol = request.POST.get('rol').upper()
-        rol.clasificacion = request.POST.get('clasificacion')
-        # Captura el estado del checkbox
-        rol.estado_rol = 'estado_rol' in request.POST
-        rol.save()
-        messages.success(request, f"Rol '{rol.rol}' actualizado correctamente.")
-        return redirect('lista_roles')
+        nuevo_nombre = request.POST.get('rol', '').strip().upper()
+        nueva_clasificacion = request.POST.get('clasificacion')
+        nuevo_estado = 'estado_rol' in request.POST
 
-    clasificaciones = Rol.Clasificacion.choices
+        # VALIDACIÓN: Si el nombre cambió, verificar que el nuevo no exista ya
+        if nuevo_nombre != rol.rol and Rol.objects.filter(rol=nuevo_nombre).exists():
+            messages.error(request, f"Ya existe otro rol con el nombre '{nuevo_nombre}'.")
+            # IMPORTANTE: Usamos RENDER para quedarnos en la misma página y mostrar el SweetAlert
+            return render(request, 'usuarios/rol/editar.html', {
+                'rol': rol,
+                'clasificaciones': clasificaciones
+            })
+        else:
+            # Si todo está bien, guardamos y ahí sí redireccionamos
+            rol.rol = nuevo_nombre
+            rol.clasificacion = nueva_clasificacion
+            rol.estado_rol = nuevo_estado
+            rol.save()
+            messages.success(request, f"Rol '{rol.rol}' actualizado correctamente.")
+            return redirect('lista_roles')
+
     return render(request, 'usuarios/rol/editar.html', {
         'rol': rol,
         'clasificaciones': clasificaciones
     })
-
 
 @login_required
 def eliminar_rol(request, id_rol):
     """Acción de eliminación con protección de base de datos"""
     rol = get_object_or_404(Rol, id_rol=id_rol)
 
-    # Nota: El SweetAlert en lista.html envía un POST
     if request.method == 'POST':
         try:
             rol.delete()
             messages.success(request, "Rol eliminado correctamente.")
         except ProtectedError:
-            messages.error(request, f"No se puede eliminar '{rol.rol}' porque tiene usuarios vinculados.")
+            # Este error ocurre si hay usuarios asignados a este rol (FK restrict)
+            messages.error(request, f"No se puede eliminar '{rol.rol}' porque tiene usuarios vinculados. Primero cambia el rol de esos usuarios.")
 
     return redirect('lista_roles')
