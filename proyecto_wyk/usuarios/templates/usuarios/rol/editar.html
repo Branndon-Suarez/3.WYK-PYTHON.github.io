@@ -21,7 +21,7 @@
 
             <div class="form-group-wyk">
                 <label class="form-label-wyk">Nombre del Rol</label>
-                <input type="text" name="rol" value="{{ rol.rol }}" id="rol_nombre"
+                <input type="text" name="rol" value="{{ nombre_intentado|default:rol.rol }}" id="rol_nombre"
                        class="input-wyk input-uppercase" required>
             </div>
 
@@ -29,7 +29,12 @@
                 <label class="form-label-wyk">Clasificación</label>
                 <select name="clasificacion" class="input-wyk" required>
                     {% for valor, etiqueta in clasificaciones %}
-                        <option value="{{ valor }}" {% if rol.clasificacion == valor %}selected{% endif %}>
+                        <option value="{{ valor }}"
+                            {% if nombre_intentado %}
+                                {% if valor == clasificacion_intentada %}selected{% endif %}
+                            {% else %}
+                                {% if rol.clasificacion == valor %}selected{% endif %}
+                            {% endif %}>
                             {{ etiqueta }}
                         </option>
                     {% endfor %}
@@ -42,8 +47,12 @@
                     <small style="color: rgba(255,255,255,0.4); font-size: 0.75rem;">¿Permitir acceso a este grupo?</small>
                 </div>
                 <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" name="estado_rol"
-                           id="estado_rol" {% if rol.estado_rol %}checked{% endif %}
+                    <input class="form-check-input" type="checkbox" name="estado_rol" id="estado_rol"
+                           {% if nombre_intentado %}
+                                {% if estado_intentado %}checked{% endif %}
+                           {% else %}
+                                {% if rol.estado_rol %}checked{% endif %}
+                           {% endif %}
                            style="transform: scale(1.3); cursor: pointer;">
                 </div>
             </div>

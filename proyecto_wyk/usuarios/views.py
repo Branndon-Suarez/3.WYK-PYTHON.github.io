@@ -106,13 +106,18 @@ def editar_rol(request, id_rol):
         # VALIDACIÓN: Si el nombre cambió, verificar que el nuevo no exista ya
         if nuevo_nombre != rol.rol and Rol.objects.filter(rol=nuevo_nombre).exists():
             messages.error(request, f"Ya existe otro rol con el nombre '{nuevo_nombre}'.")
-            # IMPORTANTE: Usamos RENDER para quedarnos en la misma página y mostrar el SweetAlert
+
+            # --- MEJORA AQUÍ ---
+            # Pasamos los datos que el usuario intentó enviar para que no se borren
             return render(request, 'usuarios/rol/editar.html', {
-                'rol': rol,
-                'clasificaciones': clasificaciones
+                'rol': rol,  # Necesario para el header
+                'clasificaciones': clasificaciones,
+                'nombre_intentado': nuevo_nombre,  # <--- Para que no se borre el input
+                'clasificacion_intentada': nueva_clasificacion,  # <--- Para que no se borre el select
+                'estado_intentado': nuevo_estado  # <--- Para que no se borre el switch
             })
         else:
-            # Si todo está bien, guardamos y ahí sí redireccionamos
+            # Si todo está bien, guardamos
             rol.rol = nuevo_nombre
             rol.clasificacion = nueva_clasificacion
             rol.estado_rol = nuevo_estado
