@@ -75,7 +75,11 @@
                 icon: "{% if message.tags == 'error' %}error{% else %}success{% endif %}",
                 title: "{% if message.tags == 'error' %}¡Atención!{% else %}¡Hecho!{% endif %}",
                 html: "{{ message|safe }}",
-                background: '#1a0a00', color: '#fff', confirmButtonColor: '#f5a623'
+                background: '#1a0a00',
+                color: '#fff',
+                confirmButtonColor: '#f5a623',
+                heightAuto: false,
+                scrollbarPadding: false
             });
         {% endfor %}
     {% endif %}
@@ -86,9 +90,14 @@
             text: "Esta acción no se puede deshacer.",
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#f5a623', cancelButtonColor: '#d33',
-            confirmButtonText: 'Sí, eliminar', cancelButtonText: 'Cancelar',
-            background: '#1a0a00', color: '#fff'
+            confirmButtonColor: '#f5a623',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar',
+            background: '#1a0a00',
+            color: '#fff',
+            heightAuto: false,
+            scrollbarPadding: false
         }).then((result) => {
             if (result.isConfirmed) {
                 const form = document.createElement('form');

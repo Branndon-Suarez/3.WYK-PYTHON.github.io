@@ -13,8 +13,8 @@
     --shadow-premium: 0 15px 35px rgba(0, 0, 0, 0.6);
     --transition: all 0.3s ease;
 
-    /* Color para el botón que resalte sobre el naranja oscuro */
-    --btn-gold: #ffce74;
+    /* NUEVO COLOR CAFÉ PARA EL BOTÓN */
+    --btn-coffee: #3d1c02;
 }
 
 html, body, .app, .main-content, .content-wrapper, .app-content {
@@ -34,12 +34,14 @@ html, body, .app, .main-content, .content-wrapper, .app-content {
 /* --- HEADER ORIGINAL (TAMAÑO RESTAURADO) --- */
 .header {
     background-color: var(--primary-color-dim);
-    padding: 25px 35px; /* Restaurado según tu código anterior */
+    padding: 25px 35px;
     border-radius: var(--border-radius-lg);
-    margin-bottom: 30px; /* Restaurado según tu código anterior */
+    margin-bottom: 30px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.05);
     width: 100%;
+    box-sizing: border-box;
+    min-width: 100%;
 
     position: -webkit-sticky;
     position: sticky;
@@ -57,10 +59,10 @@ html, body, .app, .main-content, .content-wrapper, .app-content {
 .header .s { font-size: 22px; color: white; font-weight: 600; }
 .header .n { color: #ffffff; font-weight: 800; }
 
-/* --- BOTÓN NUEVO DENTRO DEL HEADER --- */
+/* --- BOTÓN CAFÉ CON LETRA BLANCA --- */
 .btn-nuevo-header {
-    background-color: var(--btn-gold);
-    color: #1a0a00;
+    background-color: var(--btn-coffee);
+    color: #ffffff !important; /* LETRA BLANCA */
     font-weight: 800;
     border-radius: 12px;
     padding: 12px 24px;
@@ -68,17 +70,18 @@ html, body, .app, .main-content, .content-wrapper, .app-content {
     font-size: 0.85rem;
     text-decoration: none;
     transition: var(--transition);
-    border: none;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(245, 166, 35, 0.4); /* BORDE DORADO SUTIL */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
 }
 
 .btn-nuevo-header:hover {
-    background-color: #ffffff;
+    background-color: #5a2a04; /* Café más claro */
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(255, 255, 255, 0.15);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+    border-color: var(--primary-color);
 }
 
-/* TARJETA Y TABLA (SIN CAMBIOS) */
+/* TARJETA Y TABLA */
 .card-wyk-table {
     background-color: var(--background-secondary) !important;
     border-radius: var(--border-radius-lg);
@@ -145,13 +148,8 @@ html, body, .app, .main-content, .content-wrapper, .app-content {
 }
 
 .btn-action:hover { background: var(--primary-color); color: #000; }
-/* EVITAR QUE EL CONTENIDO SE MUEVA AL ABRIR SWEETALERT */
-body.swal2-shown {
-    padding-right: 0 !important; /* Evita el margen que mete Swal para el scroll */
-}
 
-.header {
-    /* ... (tus otros estilos) ... */
-    box-sizing: border-box; /* Asegura que el padding no afecte el ancho total */
-    min-width: 100%; /* Refuerza que siempre ocupe el total disponible */
+/* EVITAR MOVIMIENTO POR SWEETALERT */
+body.swal2-shown {
+    padding-right: 0 !important;
 }
