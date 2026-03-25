@@ -63,6 +63,8 @@ def lista_roles(request):
 @login_required
 def crear_rol(request):
     """Formulario de Creación: crear.html con validación de duplicados"""
+    clasificaciones = Rol.Clasificacion.choices
+
     if request.method == 'POST':
         rol_nombre = request.POST.get('rol', '').strip().upper()
         clasificacion = request.POST.get('clasificacion')
@@ -71,6 +73,11 @@ def crear_rol(request):
             # VALIDACIÓN: Verificar si el nombre ya existe
             if Rol.objects.filter(rol=rol_nombre).exists():
                 messages.error(request, f"El nombre de rol '{rol_nombre}' ya está registrado. Intenta con otro.")
+                # FIX: Retornamos el render aquí mismo para que NO se salga del formulario
+                return render(request, 'usuarios/rol/crear.html', {
+                    'clasificaciones': clasificaciones,
+                    'rol_digitado': rol_nombre  # Enviamos esto para no borrar lo que escribió
+                })
             else:
                 Rol.objects.create(
                     rol=rol_nombre,
@@ -82,7 +89,6 @@ def crear_rol(request):
         else:
             messages.error(request, "Todos los campos son obligatorios.")
 
-    clasificaciones = Rol.Clasificacion.choices
     return render(request, 'usuarios/rol/crear.html', {'clasificaciones': clasificaciones})
 
 

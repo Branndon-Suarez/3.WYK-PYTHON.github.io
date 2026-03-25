@@ -1,0 +1,189 @@
+/* -----------------------------------------------------------
+   SISTEMA DE FORMULARIOS GLOBAL - WYK EXPRESS
+   ----------------------------------------------------------- */
+
+:root {
+    --primary-wyk: #f5a623;
+    --primary-dim: #bd7a13;
+    --background-deep: #0f0600;
+    --background-card: #1a0a00;
+    --radius-premium: 22px;
+    --transition: all 0.3s ease;
+    --btn-coffee: #3d1c02;
+}
+
+/* Contenedor principal para permitir ancho total */
+.main-form-wrapper {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+/* --- HEADER DEL FORMULARIO (SIMETRÍA TOTAL EN ALTO Y ANCHO) --- */
+.form-header-wyk {
+    background-color: rgba(189, 122, 19, 0.95) !important;
+    padding: 0 35px;
+    border-radius: var(--radius-premium);
+    margin-bottom: 30px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    height: 101px;
+    min-height: 101px;
+    position: sticky;
+    top: 15px;
+    z-index: 1000;
+    backdrop-filter: blur(10px);
+}
+
+.form-header-wyk h2 {
+    font-size: 22px;
+    color: white;
+    font-weight: 600;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.form-header-wyk p {
+    margin-top: 2px;
+    opacity: 0.8;
+    font-size: 0.85rem;
+    color: white;
+    margin-bottom: 0;
+    line-height: 1.2;
+}
+
+/* --- CONTENEDOR DE LA TARJETA DEL FORMULARIO --- */
+.form-container-wyk {
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+    background-color: var(--background-card);
+    border: 1px solid rgba(245, 166, 35, 0.15);
+    border-radius: var(--radius-premium);
+    padding: 40px;
+    box-shadow: 0 15px 45px rgba(0, 0, 0, 0.7);
+    box-sizing: border-box;
+    margin-bottom: 2rem;
+}
+
+.form-group-wyk {
+    margin-bottom: 1.5rem;
+}
+
+.form-actions-wyk {
+    margin-top: 2rem;
+}
+
+/* Etiquetas */
+.form-label-wyk {
+    color: rgba(255, 255, 255, 0.4);
+    font-weight: 600;
+    font-size: 0.8rem;
+    margin-bottom: 8px;
+    display: block;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+}
+
+/* --- INPUTS Y SELECT CORREGIDOS --- */
+.input-wyk {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    color: #ffffff !important;
+    border-radius: 12px !important;
+    padding: 12px 15px !important;
+    outline: none;
+    box-sizing: border-box;
+    transition: var(--transition);
+
+    /* Elimina el estilo por defecto de los selectores en algunos navegadores */
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}
+
+/* FIX CRÍTICO: Fondo oscuro para las opciones del desplegable */
+.input-wyk option {
+    background-color: var(--background-card) !important;
+    color: white !important;
+}
+
+/* Si es un select, le ponemos una flechita sutil a la derecha */
+select.input-wyk {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='white' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: calc(100% - 15px) center;
+    padding-right: 40px !important;
+}
+
+.input-wyk:focus {
+    border-color: var(--primary-wyk) !important;
+    background: rgba(255, 255, 255, 0.07) !important;
+    box-shadow: 0 0 10px rgba(245, 166, 35, 0.1) !important;
+}
+
+.input-uppercase {
+    text-transform: uppercase;
+}
+
+/* --- BOTONES --- */
+.btn-save-wyk {
+    background-color: var(--btn-coffee);
+    color: #ffffff !important;
+    font-weight: 700;
+    border: 1px solid rgba(245, 166, 35, 0.4);
+    border-radius: 12px;
+    padding: 15px;
+    width: 100%;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: var(--transition);
+}
+
+.btn-save-wyk:hover {
+    background-color: #5a2a04;
+    transform: translateY(-2px);
+    border-color: var(--primary-wyk);
+}
+
+.btn-cancel-wyk {
+    background: transparent;
+    color: #ff8a8a;
+    border: 1px solid rgba(255, 138, 138, 0.2);
+    border-radius: 12px;
+    padding: 12px;
+    width: 100%;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 15px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: var(--transition);
+}
+
+.btn-cancel-wyk:hover {
+    background: rgba(255, 138, 138, 0.1);
+    color: #ff5555;
+}
+
+body.swal2-shown {
+    padding-right: 0 !important;
+}
