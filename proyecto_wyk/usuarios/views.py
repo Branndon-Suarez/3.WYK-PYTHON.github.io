@@ -234,18 +234,28 @@ def crear_usuario(request):
     roles = Rol.objects.filter(estado_rol=True)
 
     if request.method == 'POST':
-        num_doc = request.POST.get('num_doc')
-        nombre = request.POST.get('nombre')
-        email = request.POST.get('email')
-        telefono = request.POST.get('telefono')
+        num_doc = request.POST.get('num_doc', '').strip()
+        nombre = request.POST.get('nombre', '').strip()
+        email = request.POST.get('email', '').strip()
+        telefono = request.POST.get('telefono', '').strip()
         password = request.POST.get('password')
         id_rol = request.POST.get('rol')
 
+        # --- VALIDACIONES DE UNICIDAD ---
         if Usuario.objects.filter(num_doc=num_doc).exists():
             messages.error(request, f"Acceso denegado. El documento '{num_doc}' ya está registrado.")
+
+        elif Usuario.objects.filter(nombre=nombre).exists():
+            messages.error(request, f"Acceso denegado. El nombre '{nombre}' ya está en uso.")
+
         elif Usuario.objects.filter(email_usuario=email).exists():
             messages.error(request, f"Acceso denegado. El correo '{email}' ya está registrado.")
+
+        elif telefono and Usuario.objects.filter(tel_usuario=telefono).exists():
+            messages.error(request, f"Acceso denegado. El teléfono '{telefono}' ya pertenece a otro usuario.")
+
         else:
+            # --- PROCESO DE GUARDADO ---
             try:
                 rol_obj = Rol.objects.get(id_rol=id_rol)
                 Usuario.objects.create_user(
@@ -259,9 +269,13 @@ def crear_usuario(request):
                 )
                 messages.success(request, f"Usuario '{nombre}' creado exitosamente.")
                 return redirect('lista_usuarios')
+            except Rol.DoesNotExist:
+                messages.error(request, "El rol seleccionado no es válido.")
             except Exception as e:
-                messages.error(request, f"Error al crear: {str(e)}")
+                messages.error(request, f"Error inesperado al crear: {str(e)}")
 
+    # Si llega aquí (por GET o por error de validación), se renderiza el formulario
+    # request.POST permitirá que el HTML recupere los valores ya escritos
     return render(request, 'usuarios/usuario/crear.html', {'roles': roles})
 
 

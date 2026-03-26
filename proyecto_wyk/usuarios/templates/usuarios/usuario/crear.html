@@ -81,25 +81,29 @@
             {% csrf_token %}
             <div class="form-group-wyk">
                 <label class="form-label-wyk">Número de Documento</label>
-                <input type="number" name="num_doc" id="id_num_doc" class="input-wyk" placeholder="Ej: 10203040" required>
+                <input type="number" name="num_doc" id="id_num_doc" class="input-wyk"
+                       placeholder="Ej: 10203040" value="{{ request.POST.num_doc|default:'' }}" required>
             </div>
             <div class="form-group-wyk">
                 <label class="form-label-wyk">Nombre Completo</label>
-                <input type="text" name="nombre" id="id_nombre" class="input-wyk" placeholder="Nombre y Apellido" required>
+                <input type="text" name="nombre" id="id_nombre" class="input-wyk"
+                       placeholder="Nombre y Apellido" value="{{ request.POST.nombre|default:'' }}" required>
             </div>
             <div class="form-group-wyk">
                 <label class="form-label-wyk">Correo Electrónico</label>
-                <input type="email" name="email" id="id_email" class="input-wyk" placeholder="ejemplo@wyk.com" required>
+                <input type="email" name="email" id="id_email" class="input-wyk"
+                       placeholder="ejemplo@wyk.com" value="{{ request.POST.email|default:'' }}" required>
             </div>
             <div class="form-group-wyk">
                 <label class="form-label-wyk">Teléfono / Celular</label>
-                <input type="text" name="telefono" id="id_telefono" class="input-wyk" placeholder="300 000 0000">
+                <input type="text" name="telefono" id="id_telefono" class="input-wyk"
+                       placeholder="300 000 0000" value="{{ request.POST.telefono|default:'' }}">
             </div>
             <div class="form-group-wyk">
                 <label class="form-label-wyk">Rol del Trabajador</label>
                 <div class="role-selector-group">
                     <input type="text" id="rol_nombre_display" class="input-wyk" placeholder="Selecciona un rol..." readonly required>
-                    <input type="hidden" name="rol" id="id_rol_hidden" required>
+                    <input type="hidden" name="rol" id="id_rol_hidden" value="{{ request.POST.rol|default:'' }}" required>
                     <button type="button" class="btn-search-role" data-bs-toggle="modal" data-bs-target="#modalRoles">
                         <i class="fas fa-search"></i>
                     </button>
@@ -146,7 +150,7 @@
                         <tbody>
                             {% for r in roles %}
                             {% if r.estado_rol %}
-                            <tr class="fila-seleccionable">
+                            <tr class="fila-seleccionable" data-id="{{ r.id_rol }}" data-nombre="{{ r.rol }}">
                                 <td class="text-center text-gold">{{ r.id_rol }}</td>
                                 <td class="text-white">{{ r.rol }}</td>
                                 <td class="text-center"><span class="badge-nivel">{{ r.get_clasificacion_display }}</span></td>
@@ -174,7 +178,6 @@
         scrollbarPadding: false
     };
 
-    // Mensajes del servidor (Errores de validación)
     {% if messages %}
         {% for message in messages %}
             Swal.fire({
@@ -188,14 +191,24 @@
 
     document.querySelectorAll('#tablaSelector tbody tr').forEach(fila => {
         fila.addEventListener('click', function() {
-            const id = this.cells[0].innerText;
-            const nombre = this.cells[1].innerText;
+            const id = this.getAttribute('data-id');
+            const nombre = this.getAttribute('data-nombre');
             document.getElementById('id_rol_hidden').value = id;
             document.getElementById('rol_nombre_display').value = nombre;
             const modalEl = document.getElementById('modalRoles');
             const modalInst = bootstrap.Modal.getOrCreateInstance(modalEl);
             modalInst.hide();
         });
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+        const hiddenRolId = document.getElementById('id_rol_hidden').value;
+        if(hiddenRolId) {
+            const fila = document.querySelector(`#tablaSelector tbody tr[data-id="${hiddenRolId}"]`);
+            if(fila) {
+                document.getElementById('rol_nombre_display').value = fila.getAttribute('data-nombre');
+            }
+        }
     });
 
     function togglePassword() {
@@ -209,10 +222,18 @@
     function confirmarRegistroUsuario() {
         const nombre = document.getElementById('id_nombre').value.trim();
         const doc = document.getElementById('id_num_doc').value.trim();
+        const email = document.getElementById('id_email').value.trim();
         const rol = document.getElementById('id_rol_hidden').value;
+        const password = document.getElementById('id_password').value; // Nueva validación
 
-        if (!nombre || !doc || !rol) {
-            Swal.fire({ ...swalConfig, icon: 'warning', title: 'Campos incompletos', text: 'Por favor complete todos los campos obligatorios.' });
+        // Validación de campos obligatorios incluyendo la contraseña
+        if (!nombre || !doc || !email || !rol || !password) {
+            Swal.fire({
+                ...swalConfig,
+                icon: 'warning',
+                title: 'Campos incompletos',
+                text: 'Por favor, asegúrate de llenar todos los campos obligatorios, incluyendo la contraseña.'
+            });
             return;
         }
 
