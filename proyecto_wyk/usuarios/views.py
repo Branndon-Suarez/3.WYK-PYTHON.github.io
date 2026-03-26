@@ -136,15 +136,18 @@ def eliminar_rol(request, id_rol):
         password_confirm = request.POST.get('password_confirm')
 
         if not request.user.check_password(password_confirm):
-            messages.error(request, "Contraseña incorrecta. Acción cancelada.")
+            # Agregamos "Acceso denegado" para que sea ALERTA CENTRAL ROJA
+            messages.error(request, "Acceso denegado. Contraseña incorrecta. Acción cancelada.")
             return redirect('lista_roles')
 
         try:
             nombre_eliminado = rol.rol
             rol.delete()
+            # Éxito (Toast Verde)
             messages.success(request, f"Rol '{nombre_eliminado}' eliminado definitivamente.")
         except ProtectedError:
-            messages.error(request, f"No se puede eliminar '{rol.rol}' porque tiene usuarios vinculados.")
+            # Agregamos "Acceso denegado" para que sea ALERTA CENTRAL ROJA
+            messages.error(request, f"Acceso denegado. No se puede eliminar '{rol.rol}' porque tiene usuarios vinculados.")
 
     return redirect('lista_roles')
 

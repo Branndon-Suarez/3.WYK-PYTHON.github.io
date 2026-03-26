@@ -18,8 +18,6 @@
         }
 
         /* --- PERSONALIZACIÓN DE LOS COLORES DEL SWITCH --- */
-
-        /* Fondo Rojo (Inactivo) por defecto */
         .form-switch .form-check-input {
             background-color: #ff4444 !important;
             border-color: #ff4444 !important;
@@ -28,24 +26,20 @@
             height: 1.5em !important;
         }
 
-        /* Fondo Verde (Activo) cuando está marcado */
         .form-switch .form-check-input:checked {
             background-color: #00c851 !important;
             border-color: #00c851 !important;
         }
 
-        /* Forzar el círculo blanco siempre */
         .form-switch .form-check-input {
             background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e") !important;
         }
 
-        /* Quitar el borde azul de enfoque */
         .form-check-input:focus {
             box-shadow: none !important;
             outline: none !important;
         }
 
-        /* Colores del texto al lado del switch */
         .text-status-toggle {
             font-size: 0.8rem;
             font-weight: 700;
@@ -125,7 +119,42 @@
 
 {% block extra_js %}
 <script src="{% static 'js/sweetalert2.all.min.js' %}"></script>
+
 <script>
+    // --- MANEJO DE ALERTAS CENTRALES AL CARGAR LA PÁGINA ---
+    document.addEventListener('DOMContentLoaded', function() {
+        const swalWykConfig = {
+            background: '#1a0a00',
+            color: '#fff',
+            confirmButtonColor: '#f5a623',
+            heightAuto: false,
+            allowOutsideClick: false
+        };
+
+        {% if messages %}
+            {% for message in messages %}
+                {% if message.tags == 'success' %}
+                    Swal.fire({
+                        ...swalWykConfig,
+                        icon: 'success',
+                        title: '¡Operación Exitosa!',
+                        text: "{{ message|escapejs }}",
+                        confirmButtonText: 'Aceptar'
+                    });
+                {% elif message.tags == 'error' %}
+                    Swal.fire({
+                        ...swalWykConfig,
+                        icon: 'error',
+                        title: 'Atención',
+                        text: "{{ message|escapejs }}",
+                        confirmButtonText: 'Entendido'
+                    });
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+    });
+
+    // --- CONFIGURACIÓN DE FUNCIONES AJAX Y CONFIRMACIONES ---
     const swalConfig = { background: '#1a0a00', color: '#fff', confirmButtonColor: '#f5a623', heightAuto: false };
 
     function ajaxCambiarEstadoRol(id, element) {
@@ -133,13 +162,12 @@
         const label = document.getElementById(`label${id}`);
         const nombreRol = element.closest('tr').querySelector('.text-white').innerText;
 
-        // Revertimos temporalmente el switch visualmente
         element.checked = !nuevoEstado;
 
         let titulo = nuevoEstado ? `¿Activar el rol ${nombreRol}?` : `¿Inactivar el rol ${nombreRol}?`;
         let texto = nuevoEstado
             ? "Esto devolverá el acceso a todos los usuarios vinculados."
-            : "¡Atención! Esto quitará el acceso al sistema a TODOS los usuarios vinculados a este rol.";
+            : "¡Atención! Esto quitará el acceso al sistema a TODOS los usuarios vinculados.";
 
         Swal.fire({
             ...swalConfig,
@@ -147,19 +175,12 @@
             text: texto,
             icon: nuevoEstado ? 'question' : 'warning',
             input: 'password',
-            inputAttributes: {
-                placeholder: 'Ingresa tu contraseña de administrador',
-                autocapitalize: 'off'
-            },
+            inputAttributes: { placeholder: 'Contraseña de administrador', autocapitalize: 'off' },
             showCancelButton: true,
             confirmButtonText: 'Confirmar',
             cancelButtonText: 'Cancelar',
             preConfirm: (password) => {
-                if (!password) {
-                    Swal.showValidationMessage('La contraseña es obligatoria');
-                    return false;
-                }
-                // Validamos la contraseña contra el servidor ANTES de cerrar la alerta
+                if (!password) { Swal.showValidationMessage('La contraseña es obligatoria'); return false; }
                 return fetch("{% url 'verificar_password_ajax' %}", {
                     method: 'POST',
                     headers: { 'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -168,27 +189,16 @@
                 .then(response => response.json())
                 .then(data => {
                     if (!data.valid) throw new Error('Contraseña incorrecta');
-                    return password; // Si es válida, pasamos al siguiente paso
+                    return password;
                 })
-                .catch(error => {
-                    Swal.showValidationMessage(error.message);
-                });
+                .catch(error => { Swal.showValidationMessage(error.message); });
             }
         }).then((result) => {
             if (result.isConfirmed) {
-                // Si llegamos aquí, la contraseña ya fue validada por el preConfirm
                 fetch("{% url 'cambiar_estado_rol_ajax' %}", {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': '{{ csrf_token }}',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: JSON.stringify({
-                        id_rol: id,
-                        nuevo_estado: nuevoEstado,
-                        password: result.value
-                    })
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}', 'X-Requested-With': 'XMLHttpRequest' },
+                    body: JSON.stringify({ id_rol: id, nuevo_estado: nuevoEstado, password: result.value })
                 })
                 .then(response => response.json())
                 .then(data => {
@@ -196,14 +206,7 @@
                         element.checked = nuevoEstado;
                         label.innerText = nuevoEstado ? 'Activo' : 'Inactivo';
                         label.className = `form-check-label text-status-toggle ${nuevoEstado ? 'text-active' : 'text-inactive'}`;
-
-                        Swal.fire({
-                            ...swalConfig,
-                            icon: 'success',
-                            title: '¡Operación Exitosa!',
-                            text: data.message,
-                            confirmButtonText: 'Aceptar'
-                        });
+                        Swal.fire({ ...swalConfig, icon: 'success', title: '¡Operación Exitosa!', text: data.message });
                     } else {
                         Swal.fire({ ...swalConfig, icon: 'error', title: 'Error', text: data.message });
                     }
