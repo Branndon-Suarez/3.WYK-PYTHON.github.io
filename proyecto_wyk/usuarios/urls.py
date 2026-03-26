@@ -10,4 +10,5 @@ urlpatterns = [
 
     # NUEVA RUTA CENTRALIZADA
     path('verificar-password/', views.verificar_password_ajax, name='verificar_password_ajax'),
+    path('roles/cambiar-estado-ajax/', views.cambiar_estado_rol_ajax, name='cambiar_estado_rol_ajax'),
 ]
