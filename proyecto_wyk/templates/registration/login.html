@@ -74,19 +74,19 @@
         var successMessage = "";
         var errorMessage = "";
 
-        {% if form.errors %}
-            errorMessage = "Por favor, verifica los datos ingresados.";
-        {% endif %}
-
+        // CAPTURAMOS SOLO LOS MENSAJES REALES (Inactivos o Incorrectos)
         {% if messages %}
             {% for message in messages %}
                 {% if message.tags == 'error' %}
-                    errorMessage = "{{ message }}";
+                    errorMessage = "{{ message|escapejs }}";
                 {% elif message.tags == 'success' %}
-                    successMessage = "{{ message }}";
+                    successMessage = "{{ message|escapejs }}";
                 {% endif %}
             {% endfor %}
         {% endif %}
+
+        // HEMOS QUITADO EL BLOQUE DE form.errors PARA QUE NO ESTORBE
+        console.log("Mensaje enviado al JS:", errorMessage);
     </script>
 
     <script src="{% static 'js/toads-sweetalert2.js' %}"></script>

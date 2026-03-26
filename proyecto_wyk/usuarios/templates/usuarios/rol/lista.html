@@ -133,7 +133,7 @@
         const label = document.getElementById(`label${id}`);
         const nombreRol = element.closest('tr').querySelector('.text-white').innerText;
 
-        // Revertimos temporalmente el switch hasta que se confirme la clave
+        // Revertimos temporalmente el switch visualmente
         element.checked = !nuevoEstado;
 
         let titulo = nuevoEstado ? `¿Activar el rol ${nombreRol}?` : `¿Inactivar el rol ${nombreRol}?`;
@@ -159,10 +159,24 @@
                     Swal.showValidationMessage('La contraseña es obligatoria');
                     return false;
                 }
-                return password;
+                // Validamos la contraseña contra el servidor ANTES de cerrar la alerta
+                return fetch("{% url 'verificar_password_ajax' %}", {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `password=${encodeURIComponent(password)}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.valid) throw new Error('Contraseña incorrecta');
+                    return password; // Si es válida, pasamos al siguiente paso
+                })
+                .catch(error => {
+                    Swal.showValidationMessage(error.message);
+                });
             }
         }).then((result) => {
             if (result.isConfirmed) {
+                // Si llegamos aquí, la contraseña ya fue validada por el preConfirm
                 fetch("{% url 'cambiar_estado_rol_ajax' %}", {
                     method: 'POST',
                     headers: {
@@ -183,7 +197,6 @@
                         label.innerText = nuevoEstado ? 'Activo' : 'Inactivo';
                         label.className = `form-check-label text-status-toggle ${nuevoEstado ? 'text-active' : 'text-inactive'}`;
 
-                        // ALERTA DE ÉXITO CENTRALIZADA
                         Swal.fire({
                             ...swalConfig,
                             icon: 'success',
@@ -192,13 +205,8 @@
                             confirmButtonText: 'Aceptar'
                         });
                     } else {
-                        element.checked = !nuevoEstado;
-                        Swal.fire({ ...swalConfig, icon: 'error', title: 'Acceso Denegado', text: data.message });
+                        Swal.fire({ ...swalConfig, icon: 'error', title: 'Error', text: data.message });
                     }
-                })
-                .catch(error => {
-                    element.checked = !nuevoEstado;
-                    Swal.fire({ ...swalConfig, icon: 'error', title: 'Error', text: 'Error de conexión.' });
                 });
             }
         });

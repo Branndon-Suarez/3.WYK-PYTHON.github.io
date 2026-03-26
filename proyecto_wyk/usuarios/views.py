@@ -8,39 +8,42 @@ from django.http import JsonResponse
 import json
 from .models import Rol, Usuario
 
-
 # ------------------------------ AUTENTICACIÓN ------------------------------
-
 def login_view(request):
     if request.user.is_authenticated:
         return redirect('inicio')
 
     if request.method == 'POST':
-        form = LoginForm(data=request.POST)
-        if form.is_valid():
-            user = form.get_user()
+        num_doc_post = request.POST.get('username')
+        password_post = request.POST.get('password')
+
+        # 1. VALIDACIÓN DE INACTIVOS (ALERTA ROJA)
+        if num_doc_post:
+            usuario_db = Usuario.objects.filter(num_doc=num_doc_post).first()
+            if usuario_db:
+                if not usuario_db.is_active:
+                    messages.error(request, "Acceso denegado. Tu cuenta está inactiva. Contacta al administrador.")
+                    return render(request, 'registration/login.html', {'form': LoginForm(request.POST)})
+
+                if usuario_db.rol_fk_usuario and not usuario_db.rol_fk_usuario.estado_rol:
+                    messages.error(request, f"Acceso denegado. El rol '{usuario_db.rol_fk_usuario.rol}' está inactivo. Contacta al administrador.")
+                    return render(request, 'registration/login.html', {'form': LoginForm(request.POST)})
+
+        # 2. INTENTO DE AUTENTICACIÓN (Independiente de form.is_valid)
+        user = authenticate(request, num_doc=num_doc_post, password=password_post)
+
+        if user is not None:
             auth_login(request, user)
             return redirect('inicio')
         else:
-            num_doc = request.POST.get('username')
-            password = request.POST.get('password')
+            # SI NO HAY USUARIO, ES EL TOAST NARANJA
+            messages.error(request, "Número de documento o contraseña incorrectos.")
+            return render(request, 'registration/login.html', {'form': LoginForm(request.POST)})
 
-            user = authenticate(request, num_doc=num_doc, password=password)
-
-            try:
-                usuario_db = Usuario.objects.get(num_doc=num_doc)
-                if usuario_db.check_password(password) and not usuario_db.is_active:
-                    messages.error(request,
-                                   "Acceso denegado. Tu cuenta está inactiva, comunícate con el administrador.")
-                else:
-                    messages.error(request, "Número de documento o contraseña incorrectos.")
-            except Usuario.DoesNotExist:
-                messages.error(request, "Número de documento o contraseña incorrectos.")
     else:
         form = LoginForm()
 
     return render(request, 'registration/login.html', {'form': form})
-
 
 def logout_view(request):
     auth_logout(request)
@@ -50,10 +53,7 @@ def logout_view(request):
 
 @login_required
 def verificar_password_ajax(request):
-    """
-    Verifica la contraseña mediante AJAX.
-    Se usa como paso previo visual en el frontend.
-    """
+    """ Verifica la contraseña mediante AJAX para preConfirm de SweetAlert2 """
     if request.method == 'POST':
         password = request.POST.get('password')
         is_valid = request.user.check_password(password)
@@ -130,7 +130,6 @@ def editar_rol(request, id_rol):
 
 @login_required
 def eliminar_rol(request, id_rol):
-    """Eliminación definitiva con validación de contraseña"""
     rol = get_object_or_404(Rol, id_rol=id_rol)
 
     if request.method == 'POST':
@@ -151,9 +150,6 @@ def eliminar_rol(request, id_rol):
 
 @login_required
 def cambiar_estado_rol_ajax(request):
-    """
-    Cambio de estado Activo/Inactivo vía AJAX con validación de contraseña.
-    """
     if request.method == 'POST' and request.headers.get('x-requested-with') == 'XMLHttpRequest':
         try:
             data = json.loads(request.body)
@@ -161,13 +157,11 @@ def cambiar_estado_rol_ajax(request):
             nuevo_estado = data.get('nuevo_estado')
             password = data.get('password')
 
-            # VALIDACIÓN DE SEGURIDAD EN SERVIDOR
             if not request.user.check_password(password):
                 return JsonResponse({'success': False, 'message': 'Contraseña incorrecta.'})
 
             rol = Rol.objects.get(id_rol=id_rol)
 
-            # PROTECCIÓN PARA EL ROL ADMIN
             if rol.rol == 'ADMIN' and not nuevo_estado:
                 return JsonResponse({'success': False, 'message': 'El rol ADMIN debe permanecer activo siempre.'})
 
