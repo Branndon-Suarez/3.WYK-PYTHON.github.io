@@ -21,7 +21,7 @@
 
             <div class="form-group-wyk">
                 <label class="form-label-wyk">Nombre del Rol</label>
-                <input type="text" name="rol" value="{{ nombre_intentado|default:rol.rol }}" id="rol_nombre"
+                <input type="text" name="rol" value="{{ form.rol.value|default:rol.rol }}" id="rol_nombre"
                        class="input-wyk input-uppercase" required>
             </div>
 
@@ -30,11 +30,7 @@
                 <select name="clasificacion" class="input-wyk" required>
                     {% for valor, etiqueta in clasificaciones %}
                         <option value="{{ valor }}"
-                            {% if nombre_intentado %}
-                                {% if valor == clasificacion_intentada %}selected{% endif %}
-                            {% else %}
-                                {% if rol.clasificacion == valor %}selected{% endif %}
-                            {% endif %}>
+                            {% if form.clasificacion.value == valor or not form.is_bound and rol.clasificacion == valor %}selected{% endif %}>
                             {{ etiqueta }}
                         </option>
                     {% endfor %}
@@ -65,14 +61,14 @@
         scrollbarPadding: false
     };
 
-    /* --- DETECCIÓN DE MENSAJES --- */
+    /* --- DETECCIÓN DE MENSAJES DEL SERVIDOR --- */
     {% if messages %}
         {% for message in messages %}
             Swal.fire({
                 ...swalConfig,
                 icon: "{% if message.tags == 'error' %}error{% else %}success{% endif %}",
                 title: "{% if message.tags == 'error' %}¡Atención!{% else %}¡Hecho!{% endif %}",
-                text: "{{ message|safe }}"
+                text: "{{ message|escapejs }}"
             });
         {% endfor %}
     {% endif %}

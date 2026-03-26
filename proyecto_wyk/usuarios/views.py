@@ -3,12 +3,13 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import ProtectedError
 from django.contrib.auth import login as auth_login, logout as auth_logout, authenticate
-from .forms import LoginForm
 from django.http import JsonResponse
 import json
 from .models import Rol, Usuario
 from django.db import connection
 
+# IMPORTANTE: Ahora importamos los nuevos formularios
+from .forms import LoginForm, RolForm, UsuarioForm
 
 # ------------------------------ AUTENTICACIÓN ------------------------------
 def login_view(request):
@@ -19,7 +20,6 @@ def login_view(request):
         num_doc_post = request.POST.get('username')
         password_post = request.POST.get('password')
 
-        # 1. VALIDACIÓN DE INACTIVOS (ALERTA ROJA)
         if num_doc_post:
             usuario_db = Usuario.objects.filter(num_doc=num_doc_post).first()
             if usuario_db:
@@ -32,17 +32,14 @@ def login_view(request):
                                    f"Acceso denegado. El rol '{usuario_db.rol_fk_usuario.rol}' está inactivo. Contacta al administrador.")
                     return render(request, 'registration/login.html', {'form': LoginForm(request.POST)})
 
-        # 2. INTENTO DE AUTENTICACIÓN (Independiente de form.is_valid)
         user = authenticate(request, num_doc=num_doc_post, password=password_post)
 
         if user is not None:
             auth_login(request, user)
             return redirect('inicio')
         else:
-            # SI NO HAY USUARIO, ES EL TOAST NARANJA
             messages.error(request, "Número de documento o contraseña incorrectos.")
             return render(request, 'registration/login.html', {'form': LoginForm(request.POST)})
-
     else:
         form = LoginForm()
 
@@ -77,7 +74,6 @@ def inicio(request):
 
 @login_required
 def lista_roles(request):
-    # Validamos por nombre de ROL
     if request.user.rol_fk_usuario.rol != 'ADMIN':
         messages.error(request, "Acceso denegado. No tienes permisos para gestionar roles.")
         return redirect('inicio')
@@ -92,27 +88,23 @@ def crear_rol(request):
         messages.error(request, "Acceso denegado. No tienes permisos para crear roles.")
         return redirect('inicio')
 
-    clasificaciones = Rol.Clasificacion.choices
-
+    form = RolForm(request.POST or None)
     if request.method == 'POST':
-        rol_nombre = request.POST.get('rol', '').strip().upper()
-        clasificacion = request.POST.get('clasificacion')
-
-        if rol_nombre and clasificacion:
-            if Rol.objects.filter(rol=rol_nombre).exists():
-                messages.error(request, f"El nombre de rol '{rol_nombre}' ya está registrado.")
-                return render(request, 'usuarios/rol/crear.html', {
-                    'clasificaciones': clasificaciones,
-                    'rol_digitado': rol_nombre
-                })
-            else:
-                Rol.objects.create(rol=rol_nombre, clasificacion=clasificacion, estado_rol=True)
-                messages.success(request, f"Rol '{rol_nombre}' creado correctamente.")
-                return redirect('lista_roles')
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Rol '{form.cleaned_data['rol']}' creado correctamente.")
+            return redirect('lista_roles')
         else:
-            messages.error(request, "Todos los campos son obligatorios.")
+            for error in form.non_field_errors():
+                messages.error(request, error)
+            for field in form:
+                for error in field.errors:
+                    messages.error(request, error)
 
-    return render(request, 'usuarios/rol/crear.html', {'clasificaciones': clasificaciones})
+    return render(request, 'usuarios/rol/crear.html', {
+        'clasificaciones': Rol.Clasificacion.choices,
+        'form': form
+    })
 
 
 @login_required
@@ -122,28 +114,23 @@ def editar_rol(request, id_rol):
         return redirect('inicio')
 
     rol = get_object_or_404(Rol, id_rol=id_rol)
-    clasificaciones = Rol.Clasificacion.choices
+    form = RolForm(request.POST or None, instance=rol)
 
     if request.method == 'POST':
-        nuevo_nombre = request.POST.get('rol', '').strip().upper()
-        nueva_clasificacion = request.POST.get('clasificacion')
-
-        if nuevo_nombre != rol.rol and Rol.objects.filter(rol=nuevo_nombre).exists():
-            messages.error(request, f"Ya existe otro rol con el nombre '{nuevo_nombre}'.")
-            return render(request, 'usuarios/rol/editar.html', {
-                'rol': rol,
-                'clasificaciones': clasificaciones,
-                'nombre_intentado': nuevo_nombre,
-                'clasificacion_intentada': nueva_clasificacion,
-            })
-        else:
-            rol.rol = nuevo_nombre
-            rol.clasificacion = nueva_clasificacion
-            rol.save()
+        if form.is_valid():
+            form.save()
             messages.success(request, f"Rol '{rol.rol}' actualizado correctamente.")
             return redirect('lista_roles')
+        else:
+            for field in form:
+                for error in field.errors:
+                    messages.error(request, error)
 
-    return render(request, 'usuarios/rol/editar.html', {'rol': rol, 'clasificaciones': clasificaciones})
+    return render(request, 'usuarios/rol/editar.html', {
+        'rol': rol,
+        'clasificaciones': Rol.Clasificacion.choices,
+        'form': form
+    })
 
 
 @login_required
@@ -156,7 +143,6 @@ def eliminar_rol(request, id_rol):
 
     if request.method == 'POST':
         password_confirm = request.POST.get('password_confirm')
-
         if not request.user.check_password(password_confirm):
             messages.error(request, "Acceso denegado. Contraseña incorrecta. Acción cancelada.")
             return redirect('lista_roles')
@@ -166,8 +152,7 @@ def eliminar_rol(request, id_rol):
             rol.delete()
             messages.success(request, f"Rol '{nombre_eliminado}' eliminado definitivamente.")
         except ProtectedError:
-            messages.error(request,
-                           f"Acceso denegado. No se puede eliminar '{rol.rol}' porque tiene usuarios vinculados.")
+            messages.error(request, f"Acceso denegado. No se puede eliminar '{rol.rol}' porque tiene usuarios vinculados.")
 
     return redirect('lista_roles')
 
@@ -188,7 +173,6 @@ def cambiar_estado_rol_ajax(request):
                 return JsonResponse({'success': False, 'message': 'Contraseña incorrecta.'})
 
             rol = Rol.objects.get(id_rol=id_rol)
-
             if rol.rol == 'ADMIN' and not nuevo_estado:
                 return JsonResponse({'success': False, 'message': 'El rol ADMIN debe permanecer activo siempre.'})
 
@@ -196,13 +180,7 @@ def cambiar_estado_rol_ajax(request):
             rol.save()
 
             accion = "activado" if nuevo_estado else "inactivado"
-            return JsonResponse({
-                'success': True,
-                'message': f"Rol '{rol.rol}' {accion} correctamente."
-            })
-
-        except Rol.DoesNotExist:
-            return JsonResponse({'success': False, 'message': 'Rol no encontrado.'})
+            return JsonResponse({'success': True, 'message': f"Rol '{rol.rol}' {accion} correctamente."})
         except Exception as e:
             return JsonResponse({'success': False, 'message': str(e)})
 
@@ -218,8 +196,6 @@ def lista_usuarios(request):
         return redirect('inicio')
 
     usuarios = Usuario.objects.all().select_related('rol_fk_usuario').order_by('id_usuario')
-
-    # CAMBIO: Quitamos el filtro de estado_rol para que todos los roles aparezcan en los chips de filtrado
     roles_lista = Rol.objects.all().order_by('rol')
 
     return render(request, 'usuarios/usuario/lista.html', {
@@ -235,51 +211,22 @@ def crear_usuario(request):
         return redirect('inicio')
 
     roles = Rol.objects.filter(estado_rol=True)
+    form = UsuarioForm(request.POST or None)
 
     if request.method == 'POST':
-        num_doc = request.POST.get('num_doc', '').strip()
-        nombre = request.POST.get('nombre', '').strip()
-        email = request.POST.get('email', '').strip()
-        telefono = request.POST.get('telefono', '').strip()
-        password = request.POST.get('password')
-        id_rol = request.POST.get('rol')
-
-        # --- VALIDACIONES DE UNICIDAD ---
-        if Usuario.objects.filter(num_doc=num_doc).exists():
-            messages.error(request, f"Acceso denegado. El documento '{num_doc}' ya está registrado.")
-
-        elif Usuario.objects.filter(nombre=nombre).exists():
-            messages.error(request, f"Acceso denegado. El nombre '{nombre}' ya está en uso.")
-
-        elif Usuario.objects.filter(email_usuario=email).exists():
-            messages.error(request, f"Acceso denegado. El correo '{email}' ya está registrado.")
-
-        elif telefono and Usuario.objects.filter(tel_usuario=telefono).exists():
-            messages.error(request, f"Acceso denegado. El teléfono '{telefono}' ya pertenece a otro usuario.")
-
+        if form.is_valid():
+            nuevo_usuario = form.save(commit=False)
+            nuevo_usuario.set_password(request.POST.get('password'))
+            nuevo_usuario.estado_usuario = True
+            nuevo_usuario.save()
+            messages.success(request, f"Usuario '{nuevo_usuario.nombre}' creado exitosamente.")
+            return redirect('lista_usuarios')
         else:
-            # --- PROCESO DE GUARDADO ---
-            try:
-                rol_obj = Rol.objects.get(id_rol=id_rol)
-                Usuario.objects.create_user(
-                    num_doc=num_doc,
-                    nombre=nombre,
-                    email_usuario=email,
-                    tel_usuario=telefono,
-                    password=password,
-                    rol_fk_usuario=rol_obj,
-                    estado_usuario=True
-                )
-                messages.success(request, f"Usuario '{nombre}' creado exitosamente.")
-                return redirect('lista_usuarios')
-            except Rol.DoesNotExist:
-                messages.error(request, "El rol seleccionado no es válido.")
-            except Exception as e:
-                messages.error(request, f"Error inesperado al crear: {str(e)}")
+            for field in form:
+                for error in field.errors:
+                    messages.error(request, error)
 
-    # Si llega aquí (por GET o por error de validación), se renderiza el formulario
-    # request.POST permitirá que el HTML recupere los valores ya escritos
-    return render(request, 'usuarios/usuario/crear.html', {'roles': roles})
+    return render(request, 'usuarios/usuario/crear.html', {'roles': roles, 'form': form})
 
 
 @login_required
@@ -290,47 +237,32 @@ def editar_usuario(request, id_usuario):
 
     usuario_edit = get_object_or_404(Usuario, id_usuario=id_usuario)
     roles = Rol.objects.filter(estado_rol=True)
+    form = UsuarioForm(request.POST or None, instance=usuario_edit)
 
     if request.method == 'POST':
-        num_doc = request.POST.get('num_doc')
-        nombre = request.POST.get('nombre')
-        email = request.POST.get('email')
-        telefono = request.POST.get('telefono')
-        id_rol = request.POST.get('rol')
-        nueva_pass = request.POST.get('password')
-
-        if Usuario.objects.filter(num_doc=num_doc).exclude(id_usuario=id_usuario).exists():
-            messages.error(request, f"Acceso denegado. El documento '{num_doc}' ya pertenece a otro usuario.")
-        elif Usuario.objects.filter(email_usuario=email).exclude(id_usuario=id_usuario).exists():
-            messages.error(request, f"Acceso denegado. El correo '{email}' ya está registrado.")
+        if form.is_valid():
+            usuario_actualizado = form.save(commit=False)
+            nueva_pass = request.POST.get('password')
+            if nueva_pass and nueva_pass.strip():
+                usuario_actualizado.set_password(nueva_pass)
+            usuario_actualizado.save()
+            messages.success(request, f"Usuario '{usuario_actualizado.nombre}' actualizado.")
+            return redirect('lista_usuarios')
         else:
-            try:
-                rol_obj = Rol.objects.get(id_rol=id_rol)
-                usuario_edit.num_doc = num_doc
-                usuario_edit.nombre = nombre
-                usuario_edit.email_usuario = email
-                usuario_edit.tel_usuario = telefono
-                usuario_edit.rol_fk_usuario = rol_obj
-
-                if nueva_pass and nueva_pass.strip():
-                    usuario_edit.set_password(nueva_pass)
-
-                usuario_edit.save()
-                messages.success(request, f"Usuario '{usuario_edit.nombre}' actualizado.")
-                return redirect('lista_usuarios')
-            except Exception as e:
-                messages.error(request, f"Error: {str(e)}")
+            for field in form:
+                for error in field.errors:
+                    messages.error(request, error)
 
     return render(request, 'usuarios/usuario/editar.html', {
         'usuario': usuario_edit,
-        'roles': roles
+        'roles': roles,
+        'form': form
     })
 
 
 @login_required
 def eliminar_usuario(request, id_usuario):
-    # 1. Validación de Rol
-    if request.user.rol_fk_usuario.rol != 'ADMIN':  # O 'ADMIN', verifica cómo lo tienes en DB
+    if request.user.rol_fk_usuario.rol != 'ADMIN':
         messages.error(request, "Acceso denegado. No tienes permisos.")
         return redirect('inicio')
 
@@ -338,33 +270,24 @@ def eliminar_usuario(request, id_usuario):
 
     if request.method == 'POST':
         password_confirm = request.POST.get('password_confirm')
-
-        # 2. Validación de contraseña del Admin
         if not request.user.check_password(password_confirm):
             messages.error(request, "Contraseña de administrador incorrecta.")
             return redirect('lista_usuarios')
 
-        # 3. Evitar suicidio de cuenta
         if usuario_del == request.user:
             messages.error(request, "No puedes eliminar tu propia cuenta.")
             return redirect('lista_usuarios')
 
         try:
             nombre_eliminado = usuario_del.nombre
-
-            # --- EL CAMBIO CLAVE AQUÍ ---
-            # Usamos SQL puro para saltarnos la búsqueda de 'usuario_groups'
             with connection.cursor() as cursor:
                 cursor.execute("DELETE FROM usuario WHERE id_usuario = %s", [id_usuario])
-
             messages.success(request, f"Usuario '{nombre_eliminado}' eliminado correctamente.")
-
-        except Exception as e:
-            # Si el usuario tiene tareas asignadas u otras relaciones con ON_DELETE=PROTECT,
-            # la base de datos (MariaDB/MySQL) lanzará un error y entrará aquí.
+        except Exception:
             messages.error(request, f"No se puede eliminar a '{usuario_del.nombre}' porque tiene registros asociados.")
 
     return redirect('lista_usuarios')
+
 
 @login_required
 def cambiar_estado_usuario_ajax(request):
@@ -382,7 +305,6 @@ def cambiar_estado_usuario_ajax(request):
                 return JsonResponse({'success': False, 'message': 'Acceso denegado. Contraseña incorrecta.'})
 
             usuario = Usuario.objects.get(id_usuario=id_u)
-
             if usuario == request.user and not nuevo_estado:
                 return JsonResponse({'success': False, 'message': 'No puedes desactivar tu propia cuenta.'})
 
@@ -390,10 +312,7 @@ def cambiar_estado_usuario_ajax(request):
             usuario.save()
 
             accion = "activado" if nuevo_estado else "inactivado"
-            return JsonResponse({
-                'success': True,
-                'message': f"Usuario '{usuario.nombre}' {accion} correctamente."
-            })
+            return JsonResponse({'success': True, 'message': f"Usuario '{usuario.nombre}' {accion} correctamente."})
         except Exception as e:
             return JsonResponse({'success': False, 'message': str(e)})
 
