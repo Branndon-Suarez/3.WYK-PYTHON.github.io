@@ -39,17 +39,21 @@
                     <span>Dashboard</span>
                 </a>
 
+                {% if user.rol_fk_usuario.rol == 'ADMIN' %}
                 <div class="nav-section">GESTIÓN USUARIOS</div>
 
-                <a href="{% url 'lista_roles' %}" class="nav-item {% if 'roles' in request.path %}active{% endif %}">
+                <a href="{% url 'lista_roles' %}" class="nav-item {% if '/roles/' in request.path %}active{% endif %}">
                     <i class="fa fa-user-shield"></i>
                     <span>Roles</span>
                 </a>
 
-                <a href="javascript:void(0)" class="nav-item" onclick="showModule('usuarios')">
+                <a href="{% url 'lista_usuarios' %}" class="nav-item {% if '/usuario/' in request.path %}active{% endif %}">
                     <i class="fa fa-users"></i>
                     <span>Usuarios</span>
                 </a>
+                {% endif %}
+
+                <div class="nav-section">OPERACIONES</div>
 
                 <a href="javascript:void(0)" class="nav-item" onclick="showModule('productos')">
                     <i class="fa fa-box"></i>

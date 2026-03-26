@@ -16,17 +16,15 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from usuarios import views  # Importamos tus nuevas vistas
+from usuarios import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
 
-    # 1. Autenticación Personalizada (Tu diseño naranja)
+    # Rutas raíz (Login y Logout se quedan aquí)
     path('', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
-    path('inicio/', views.inicio, name='inicio'),
 
-    # 2. Rutas de Roles y otros (Si prefieres tenerlas en la app)
-    # Esto busca el archivo usuarios/urls.py
+    # TODO lo que tenga que ver con la app usuarios va dentro de su propio include
     path('usuarios/', include('usuarios.urls')),
 ]
