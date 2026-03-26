@@ -71,3 +71,11 @@ class UsuarioForm(forms.ModelForm):
         if Usuario.objects.filter(email_usuario=email).exclude(pk=self.instance.pk).exists():
             raise forms.ValidationError(f"El correo '{email}' ya está registrado.")
         return email
+
+    def clean_tel_usuario(self):
+        telefono = self.cleaned_data.get('tel_usuario')
+        if telefono:
+            # Eliminado .strip() para evitar AttributeError en campos numéricos
+            if Usuario.objects.filter(tel_usuario=telefono).exclude(pk=self.instance.pk).exists():
+                raise forms.ValidationError(f"El teléfono '{telefono}' ya está siendo usado por otro usuario.")
+        return telefono
