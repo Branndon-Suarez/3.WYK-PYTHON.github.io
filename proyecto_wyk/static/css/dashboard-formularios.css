@@ -259,3 +259,37 @@ body.swal2-shown {
     border-radius: 15px !important;
     box-shadow: 0 0 40px rgba(0, 0, 0, 0.9);
 }
+
+/* --- COMPONENTE: BUSCADOR DORADO DENTRO DE MODALES --- */
+.modal-search-wrapper {
+    padding: 15px 25px;
+    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid rgba(245, 166, 35, 0.1);
+}
+
+.modal-search-wrapper .search-container .input-group {
+    border: 1px solid var(--primary-wyk) !important;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    overflow: hidden;
+}
+
+.modal-search-wrapper .input-group-text {
+    background: transparent !important;
+    border: none !important;
+    color: var(--primary-wyk) !important;
+    padding-left: 15px;
+}
+
+.modal-search-wrapper .form-control {
+    background: transparent !important;
+    border: none !important;
+    color: white !important;
+    box-shadow: none !important;
+    padding: 10px;
+}
+
+.modal-search-wrapper .form-control::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 0.9rem;
+}

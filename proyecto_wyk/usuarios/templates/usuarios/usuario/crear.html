@@ -91,6 +91,19 @@
                 <h5 class="modal-title text-gold"><i class="fas fa-user-tag me-2"></i> Seleccionar Rol Activo</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
+
+            <div class="modal-search-wrapper">
+                <div class="search-container">
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" id="busquedaRol" class="form-control"
+                               placeholder="Buscar rol activo..." autocomplete="off">
+                    </div>
+                </div>
+            </div>
+
             <div class="modal-body p-0">
                 <div class="table-responsive">
                     <table class="table-wyk mb-0" id="tablaSelector">
@@ -143,7 +156,7 @@
         {% endfor %}
     {% endif %}
 
-    /* SELECTOR DE ROL */
+    /* LÓGICA DEL SELECTOR Y CIERRE DE MODAL */
     document.querySelectorAll('#tablaSelector tbody tr').forEach(fila => {
         fila.addEventListener('click', function() {
             const id = this.getAttribute('data-id');
@@ -155,6 +168,24 @@
             const modalInst = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
             modalInst.hide();
         });
+    });
+
+    /* FILTRO DE BÚSQUEDA INTEGRAL (ID, NOMBRE, NIVEL) */
+    document.getElementById('busquedaRol').addEventListener('keyup', function() {
+        const term = this.value.toLowerCase();
+        const filas = document.querySelectorAll('#tablaSelector tbody tr');
+
+        filas.forEach(fila => {
+            const contenidoCompleto = fila.textContent.toLowerCase();
+            fila.style.display = contenidoCompleto.includes(term) ? "" : "none";
+        });
+    });
+
+    /* LIMPIAR BUSCADOR AL ABRIR EL MODAL */
+    document.getElementById('modalRoles').addEventListener('show.bs.modal', function () {
+        const input = document.getElementById('busquedaRol');
+        input.value = '';
+        document.querySelectorAll('#tablaSelector tbody tr').forEach(f => f.style.display = "");
     });
 
     function togglePassword() {

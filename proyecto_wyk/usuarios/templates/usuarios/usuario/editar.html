@@ -105,6 +105,19 @@
                 <h5 class="modal-title text-gold"><i class="fas fa-user-tag me-2"></i> Cambiar Rol</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
+
+            <div class="modal-search-wrapper">
+                <div class="search-container">
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" id="inputBusquedaModal" class="form-control"
+                               placeholder="Buscar rol activo..." autocomplete="off">
+                    </div>
+                </div>
+            </div>
+
             <div class="modal-body p-0">
                 <div class="table-responsive">
                     <table class="table-wyk mb-0" id="tablaSelector">
@@ -168,19 +181,32 @@
                 document.getElementById('id_rol_hidden').value = id;
                 document.getElementById('rol_nombre_display').value = nombre;
 
-                // Cerrar modal usando instancia de Bootstrap 5
                 const modalEl = document.getElementById('modalRoles');
                 const modalInst = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
                 modalInst.hide();
             };
         });
 
-        // Sincronizar nombre inicial del rol
-        const hiddenRolId = document.getElementById('id_rol_hidden').value;
-        const filaActiva = document.querySelector(`#tablaSelector tbody tr[data-id="${hiddenRolId}"]`);
-        if(filaActiva) {
-            document.getElementById('rol_nombre_display').value = filaActiva.getAttribute('data-nombre');
+        /* FILTRO DE BÚSQUEDA INTEGRAL (BUSCA EN TODA LA FILA: ID, NOMBRE, NIVEL) */
+        const buscador = document.getElementById('inputBusquedaModal');
+        if (buscador) {
+            buscador.addEventListener('keyup', function() {
+                const term = this.value.toLowerCase();
+                const filasTabla = document.querySelectorAll('#tablaSelector tbody tr');
+
+                filasTabla.forEach(fila => {
+                    const contenidoFila = fila.textContent.toLowerCase();
+                    fila.style.display = contenidoFila.includes(term) ? "" : "none";
+                });
+            });
         }
+
+        /* RESETEAR BUSCADOR AL ABRIR */
+        document.getElementById('modalRoles').addEventListener('show.bs.modal', function () {
+            const input = document.getElementById('inputBusquedaModal');
+            if(input) input.value = '';
+            document.querySelectorAll('#tablaSelector tbody tr').forEach(f => f.style.display = "");
+        });
     });
 
     function togglePassword() {
