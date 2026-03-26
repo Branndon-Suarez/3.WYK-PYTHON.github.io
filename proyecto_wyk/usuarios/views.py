@@ -7,6 +7,7 @@ from .forms import LoginForm
 from django.http import JsonResponse
 import json
 from .models import Rol, Usuario
+from django.db import connection
 
 
 # ------------------------------ AUTENTICACIÓN ------------------------------
@@ -311,8 +312,9 @@ def editar_usuario(request, id_usuario):
 
 @login_required
 def eliminar_usuario(request, id_usuario):
-    if request.user.rol_fk_usuario.rol != 'ADMIN':
-        messages.error(request, "Acceso denegado. No tienes permisos para eliminar usuarios.")
+    # 1. Validación de Rol
+    if request.user.rol_fk_usuario.rol != 'ADMIN':  # O 'ADMIN', verifica cómo lo tienes en DB
+        messages.error(request, "Acceso denegado. No tienes permisos.")
         return redirect('inicio')
 
     usuario_del = get_object_or_404(Usuario, id_usuario=id_usuario)
@@ -320,24 +322,32 @@ def eliminar_usuario(request, id_usuario):
     if request.method == 'POST':
         password_confirm = request.POST.get('password_confirm')
 
+        # 2. Validación de contraseña del Admin
         if not request.user.check_password(password_confirm):
-            messages.error(request, "Acceso denegado. Contraseña incorrecta. Acción cancelada.")
+            messages.error(request, "Contraseña de administrador incorrecta.")
             return redirect('lista_usuarios')
 
+        # 3. Evitar suicidio de cuenta
         if usuario_del == request.user:
-            messages.error(request, "Acceso denegado. No puedes eliminar tu propia cuenta.")
+            messages.error(request, "No puedes eliminar tu propia cuenta.")
             return redirect('lista_usuarios')
 
         try:
             nombre_eliminado = usuario_del.nombre
-            usuario_del.delete()
-            messages.success(request, f"Usuario '{nombre_eliminado}' eliminado.")
-        except ProtectedError:
-            messages.error(request,
-                           f"Acceso denegado. No se puede eliminar a '{usuario_del.nombre}' por registros asociados.")
+
+            # --- EL CAMBIO CLAVE AQUÍ ---
+            # Usamos SQL puro para saltarnos la búsqueda de 'usuario_groups'
+            with connection.cursor() as cursor:
+                cursor.execute("DELETE FROM usuario WHERE id_usuario = %s", [id_usuario])
+
+            messages.success(request, f"Usuario '{nombre_eliminado}' eliminado correctamente.")
+
+        except Exception as e:
+            # Si el usuario tiene tareas asignadas u otras relaciones con ON_DELETE=PROTECT,
+            # la base de datos (MariaDB/MySQL) lanzará un error y entrará aquí.
+            messages.error(request, f"No se puede eliminar a '{usuario_del.nombre}' porque tiene registros asociados.")
 
     return redirect('lista_usuarios')
-
 
 @login_required
 def cambiar_estado_usuario_ajax(request):

@@ -94,6 +94,18 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
         self.is_active = self.estado_usuario
         super().save(*args, **kwargs)
 
+        # SOLUCIÓN AL ERROR DE ELIMINACIÓN:
+    def delete(self, *args, **kwargs):
+        """
+        Limpia las relaciones virtuales de grupos y permisos para que Django
+        no busque las tablas 'usuario_groups' que no existen en el SQL manual.
+        """
+        if self.id_usuario:
+            self.groups.clear()
+            self.user_permissions.clear()
+        return super(Usuario, self).delete(*args, **kwargs)
+
+
     class Meta:
         managed = False
         db_table = 'usuario'
