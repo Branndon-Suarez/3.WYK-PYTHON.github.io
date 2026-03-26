@@ -5,6 +5,17 @@
 
 {% block extra_css %}
     <link rel="stylesheet" href="{% static 'css/dashboard-tablas.css' %}">
+    <style>
+        /* Estilo para que el mensaje de error de SweetAlert sea acorde al diseño oscuro */
+        .swal2-validation-message {
+            background-color: transparent !important;
+            color: #ff8a8a !important;
+            font-weight: 600 !important;
+            border: none !important;
+            margin-top: 15px !important;
+            box-shadow: none !important;
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
@@ -69,44 +80,90 @@
 {% block extra_js %}
 <script src="{% static 'js/sweetalert2.all.min.js' %}"></script>
 <script>
+    const swalConfig = {
+        background: '#1a0a00',
+        color: '#fff',
+        confirmButtonColor: '#f5a623',
+        heightAuto: false,
+        scrollbarPadding: false
+    };
+
     {% if messages %}
         {% for message in messages %}
             Swal.fire({
+                ...swalConfig,
                 icon: "{% if message.tags == 'error' %}error{% else %}success{% endif %}",
                 title: "{% if message.tags == 'error' %}¡Atención!{% else %}¡Hecho!{% endif %}",
-                html: "{{ message|safe }}",
-                background: '#1a0a00',
-                color: '#fff',
-                confirmButtonColor: '#f5a623',
-                heightAuto: false,
-                scrollbarPadding: false
+                html: "{{ message|safe }}"
             });
         {% endfor %}
     {% endif %}
 
     function confirmarEliminar(id, nombre) {
         Swal.fire({
+            ...swalConfig,
             title: `¿Eliminar el rol ${nombre}?`,
-            text: "Esta acción no se puede deshacer.",
+            text: "Esta acción es irreversible. Ingresa tu contraseña para confirmar:",
             icon: 'warning',
+            input: 'password',
+            inputAttributes: {
+                autocapitalize: 'off',
+                autocorrect: 'off',
+                placeholder: 'Contraseña de administrador'
+            },
             showCancelButton: true,
-            confirmButtonColor: '#f5a623',
-            cancelButtonColor: '#d33',
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
             confirmButtonText: 'Sí, eliminar',
             cancelButtonText: 'Cancelar',
-            background: '#1a0a00',
-            color: '#fff',
-            heightAuto: false,
-            scrollbarPadding: false
+            preConfirm: (password) => {
+                if (!password) {
+                    Swal.showValidationMessage('La contraseña es obligatoria');
+                    return false;
+                }
+
+                // Validación AJAX en tiempo real
+                return fetch("{% url 'verificar_password_ajax' %}", {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `password=${encodeURIComponent(password)}`
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('Error en el servidor');
+                    return response.json();
+                })
+                .then(data => {
+                    if (!data.valid) {
+                        throw new Error('Contraseña incorrecta');
+                    }
+                    return password; // Continúa si es válida
+                })
+                .catch(error => {
+                    Swal.showValidationMessage(error.message);
+                });
+            }
         }).then((result) => {
             if (result.isConfirmed) {
                 const form = document.createElement('form');
                 form.method = 'POST';
                 let urlAction = "{% url 'eliminar_rol' 0 %}".replace('0', id);
                 form.action = urlAction;
+
                 const csrf = document.createElement('input');
-                csrf.type = 'hidden'; csrf.name = 'csrfmiddlewaretoken'; csrf.value = '{{ csrf_token }}';
+                csrf.type = 'hidden';
+                csrf.name = 'csrfmiddlewaretoken';
+                csrf.value = '{{ csrf_token }}';
+
+                const passInput = document.createElement('input');
+                passInput.type = 'hidden';
+                passInput.name = 'password_confirm';
+                passInput.value = result.value;
+
                 form.appendChild(csrf);
+                form.appendChild(passInput);
                 document.body.appendChild(form);
                 form.submit();
             }

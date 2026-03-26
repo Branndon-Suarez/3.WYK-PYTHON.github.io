@@ -4,7 +4,8 @@ from django.contrib import messages
 from django.db.models import ProtectedError
 from django.contrib.auth import login as auth_login, logout as auth_logout, authenticate
 from .forms import LoginForm
-from .models import Rol, Usuario  # Importamos Usuario aquí para evitar el try-import dentro de la función
+from django.http import JsonResponse
+from .models import Rol, Usuario# Importamos Usuario aquí para evitar el try-import dentro de la función
 
 
 # ------------------------------ AUTENTICACIÓN ------------------------------
@@ -43,6 +44,18 @@ def login_view(request):
 def logout_view(request):
     auth_logout(request)
     return redirect('login')
+
+# ------------------------------ AUTENTICACION PARA ELIMINACION ------------------------------
+@login_required
+def verificar_password_ajax(request):
+    """Verifica la contraseña del usuario logueado mediante AJAX"""
+    if request.method == 'POST':
+        password = request.POST.get('password')
+        # check_password verifica contra el usuario actual en sesión (request.user)
+        is_valid = request.user.check_password(password)
+        return JsonResponse({'valid': is_valid})
+
+    return JsonResponse({'valid': False}, status=400)
 
 
 # ------------------------------ INICIO ------------------------------
@@ -130,17 +143,25 @@ def editar_rol(request, id_rol):
         'clasificaciones': clasificaciones
     })
 
+
 @login_required
 def eliminar_rol(request, id_rol):
-    """Acción de eliminación con protección de base de datos"""
+    """Acción de eliminación con verificación de contraseña"""
     rol = get_object_or_404(Rol, id_rol=id_rol)
 
     if request.method == 'POST':
+        password_confirm = request.POST.get('password_confirm')
+
+        # VERIFICACIÓN DE SEGURIDAD
+        if not request.user.check_password(password_confirm):
+            messages.error(request, "Contraseña incorrecta. No se pudo eliminar el rol.")
+            return redirect('lista_roles')
+
         try:
+            nombre_eliminado = rol.rol
             rol.delete()
-            messages.success(request, "Rol eliminado correctamente.")
+            messages.success(request, f"El rol '{nombre_eliminado}' ha sido eliminado definitivamente.")
         except ProtectedError:
-            # Este error ocurre si hay usuarios asignados a este rol (FK restrict)
-            messages.error(request, f"No se puede eliminar '{rol.rol}' porque tiene usuarios vinculados. Primero cambia el rol de esos usuarios.")
+            messages.error(request, f"No se puede eliminar '{rol.rol}' porque tiene usuarios vinculados.")
 
     return redirect('lista_roles')
