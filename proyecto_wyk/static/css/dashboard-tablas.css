@@ -264,3 +264,40 @@ body.swal2-shown {
     align-items: center;
     justify-content: center;
 }
+
+/* --- COMPONENTE: BUSCADOR DORADO GLOBAL --- */
+.search-container .input-group {
+    border: 1px solid var(--primary-color) !important;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    overflow: hidden;
+}
+
+.search-container .input-group-text {
+    border: none !important;
+    background: transparent !important;
+    color: var(--primary-color) !important;
+    padding-left: 15px;
+}
+
+#inputBusqueda {
+    border: none !important;
+    background: transparent !important;
+    color: white !important;
+    width: 180px;
+    transition: all 0.3s ease;
+    box-shadow: none !important;
+}
+
+#inputBusqueda:focus {
+    width: 260px;
+}
+
+#inputBusqueda::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+@media (max-width: 768px) {
+    #inputBusqueda { width: 120px; }
+    #inputBusqueda:focus { width: 160px; }
+}
