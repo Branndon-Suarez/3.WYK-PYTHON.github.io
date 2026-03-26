@@ -218,7 +218,10 @@ def lista_usuarios(request):
         return redirect('inicio')
 
     usuarios = Usuario.objects.all().select_related('rol_fk_usuario').order_by('id_usuario')
-    roles_lista = Rol.objects.filter(estado_rol=True)
+
+    # CAMBIO: Quitamos el filtro de estado_rol para que todos los roles aparezcan en los chips de filtrado
+    roles_lista = Rol.objects.all().order_by('rol')
+
     return render(request, 'usuarios/usuario/lista.html', {
         'usuarios': usuarios,
         'roles_lista': roles_lista
