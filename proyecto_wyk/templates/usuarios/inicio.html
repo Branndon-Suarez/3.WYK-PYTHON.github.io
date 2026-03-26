@@ -52,5 +52,27 @@
 {% endblock %}
 
 {% block extra_js %}
+    {% if messages %}
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                {% for message in messages %}
+                    {% if "Acceso denegado" in message.message %}
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Seguridad',
+                            text: '{{ message|escapejs }}',
+                            confirmButtonColor: '#e74c3c'
+                        });
+                    {% else %}
+                        // Usamos la función del dashboard.js si ya cargó, o un Toast de respaldo
+                        if (typeof showNotification === 'function') {
+                            showNotification('{{ message|escapejs }}', '{{ message.tags }}');
+                        }
+                    {% endif %}
+                {% endfor %}
+            });
+        </script>
+    {% endif %}
+
     <script src="{% static 'js/dashboard.js' %}"></script>
 {% endblock %}

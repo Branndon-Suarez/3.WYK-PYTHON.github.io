@@ -107,8 +107,32 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 300);
     }
 
-    // 4. Bienvenida
-    setTimeout(() => {
-        showNotification('¡Bienvenido al Panel de Panadería WYK!', 'success');
-    }, 1000);
+    // 4. Bienvenida (Solo si no hay otros mensajes pendientes)
+    if (!window.djangoMessages || window.djangoMessages.length === 0) {
+        setTimeout(() => {
+            showNotification('¡Bienvenido al Panel de Panadería WYK!', 'success');
+        }, 1000);
+    }
+
+    // 5. Procesar mensajes de Django enviados desde el servidor
+    if (window.djangoMessages && window.djangoMessages.length > 0) {
+        window.djangoMessages.forEach(msg => {
+            if (msg.text.includes("Acceso denegado")) {
+                // Si es un error de seguridad, usamos SweetAlert para que sea impactante
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Seguridad',
+                        text: msg.text,
+                        confirmButtonColor: '#e74c3c'
+                    });
+                } else {
+                    showNotification(msg.text, 'error');
+                }
+            } else {
+                // Para el resto de mensajes (éxito, info), usamos tu notificación flotante
+                showNotification(msg.text, msg.tag === 'error' ? 'error' : msg.tag);
+            }
+        });
+    }
 });
