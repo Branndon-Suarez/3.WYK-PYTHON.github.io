@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Nuevo Usuario - WYK{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/dashboard-formularios.css' %}">
+    <style>
+        /* Contenedor relativo para el ojito de la contraseña */
+        .password-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .btn-toggle-eye {
+            position: absolute;
+            right: 15px;
+            background: transparent;
+            border: none;
+            color: var(--primary-wyk);
+            cursor: pointer;
+            z-index: 5;
+            padding: 5px;
+            transition: var(--transition);
+        }
+        .btn-toggle-eye:hover { transform: scale(1.1); color: #fff; }
+        
+        /* Ajuste para que el texto no choque con el ojo */
+        .input-password { padding-right: 45px !important; }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="main-form-wrapper fade-in">
+
+    <div class="form-header-wyk">
+        <h2>Registrar Nuevo Usuario</h2>
+        <p>Asigna credenciales y datos de contacto al personal.</p>
+    </div>
+
+    <div class="form-container-wyk">
+        <form method="post" id="formCrearUsuario">
+            {% csrf_token %}
+
+            <div class="form-group-wyk">
+                <label class="form-label-wyk">Número de Documento</label>
+                <input type="text" name="num_doc" id="id_num_doc" class="input-wyk"
+                       placeholder="Ej: 10203040" required>
+            </div>
+
+            <div class="form-group-wyk">
+                <label class="form-label-wyk">Nombre Completo</label>
+                <input type="text" name="nombre" id="id_nombre" class="input-wyk"
+                       placeholder="Nombre y Apellido" required>
+            </div>
+
+            <div class="form-group-wyk">
+                <label class="form-label-wyk">Correo Electrónico</label>
+                <input type="email" name="email" id="id_email" class="input-wyk"
+                       placeholder="ejemplo@wyk.com" required>
+            </div>
+
+            <div class="form-group-wyk">
+                <label class="form-label-wyk">Teléfono / Celular</label>
+                <input type="text" name="telefono" id="id_telefono" class="input-wyk"
+                       placeholder="300 000 0000">
+            </div>
+
+            <div class="form-group-wyk">
+                <label class="form-label-wyk">Rol del Trabajador</label>
+                <select name="rol" id="id_rol_select" class="input-wyk" required>
+                    <option value="" disabled selected>Seleccione un rol...</option>
+                    {% for r in roles %}
+                        <option value="{{ r.id_rol }}">{{ r.rol }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group-wyk">
+                <label class="form-label-wyk">Contraseña de Acceso</label>
+                <div class="password-wrapper">
+                    <input type="password" name="password" id="id_password" class="input-wyk input-password"
+                           placeholder="Asigna una clave inicial" required>
+                    <button type="button" class="btn-toggle-eye" onclick="togglePassword()">
+                        <i class="fas fa-eye" id="eyeIcon"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-actions-wyk">
+                <button type="button" onclick="confirmarRegistroUsuario()" class="btn-save-wyk">
+                    <i class="fas fa-check-circle"></i> Confirmar y Guardar
+                </button>
+                <a href="{% url 'lista_usuarios' %}" class="btn-cancel-wyk">
+                    <i class="fas fa-times"></i> Cancelar Registro
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/sweetalert2.all.min.js' %}"></script>
+<script>
+    const swalConfig = {
+        background: '#1a0a00',
+        color: '#fff',
+        confirmButtonColor: '#f5a623',
+        heightAuto: false
+    };
+
+    // --- CAPTURAR ERRORES DEL SERVIDOR (Documento o correo duplicado) ---
+    {% if messages %}
+        {% for message in messages %}
+            Swal.fire({
+                ...swalConfig,
+                icon: "{% if 'success' in message.tags %}success{% else %}error{% endif %}",
+                title: "{% if 'success' in message.tags %}Información{% else %}Atención{% endif %}",
+                text: "{{ message|safe }}"
+            });
+        {% endfor %}
+    {% endif %}
+
+    // Función para ver/ocultar contraseña (EL OJITO)
+    function togglePassword() {
+        const input = document.getElementById('id_password');
+        const icon = document.getElementById('eyeIcon');
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.replace('fa-eye', 'fa-eye-slash');
+        } else {
+            input.type = 'password';
+            icon.classList.replace('fa-eye-slash', 'fa-eye');
+        }
+    }
+
+    function confirmarRegistroUsuario() {
+        const nombre = document.getElementById('id_nombre').value.trim();
+        const doc = document.getElementById('id_num_doc').value.trim();
+        const rol = document.getElementById('id_rol_select').value;
+        const pass = document.getElementById('id_password').value;
+
+        if (!nombre || !doc || !rol || !pass) {
+            Swal.fire({ ...swalConfig, icon: 'warning', title: 'Faltan datos', text: 'Todos los campos son obligatorios.' });
+            return;
+        }
+
+        Swal.fire({
+            ...swalConfig,
+            title: '¿Registrar nuevo usuario?',
+            text: `Se creará el acceso para ${nombre}. El Administrador conoce la clave asignada.`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, registrar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('formCrearUsuario').submit();
+            }
+        });
+    }
+</script>
+{% endblock %}

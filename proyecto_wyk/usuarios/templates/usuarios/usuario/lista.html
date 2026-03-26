@@ -1,0 +1,303 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Usuarios - WYK{% endblock %}
+
+{% block extra_css %}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/dashboard-tablas.css' %}">
+
+    <style>
+        /* Ajustes específicos para la columna de contacto en esta tabla */
+        .text-contact { 
+            font-size: 0.8rem; 
+            color: rgba(255, 255, 255, 0.5); 
+            display: block;
+            margin-bottom: 2px;
+        }
+        .text-contact i { color: var(--primary-color); width: 15px; }
+        
+        /* Validación de SweetAlert con tu esquema de colores */
+        .swal2-validation-message {
+            background-color: transparent !important;
+            color: #ff8a8a !important;
+            font-weight: 600 !important;
+            border: none !important;
+            margin-top: 15px !important;
+        }
+
+        .filter-label-group {
+            display: block;
+            color: var(--primary-color);
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            margin-top: 15px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container-custom fade-in">
+    <div class="header">
+        <div class="greeting">
+            <div class="s">Gestión de <span class="n">Usuarios</span></div>
+            <div class="subtitle" style="opacity: 0.8; font-size: 0.85rem; color: white;">Panel administrativo de personal y credenciales</div>
+        </div>
+        
+        <div class="d-flex align-items-center">
+            <div class="search-container me-3">
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" id="inputBusqueda" class="form-control"
+                           placeholder="Buscar usuario..." onkeyup="filtrarTodo()">
+                </div>
+            </div>
+
+            <button type="button" class="btn-filtro-header me-3" data-bs-toggle="modal" data-bs-target="#filtroAvanzadoModal">
+                <i class="fas fa-filter"></i> Filtros
+            </button>
+
+            <button type="button" class="btn-nuevo-header me-3"
+                onclick="generarPDFGlobal('tablaUsuarios', 'Listado de Usuarios', [5])">
+                <i class="fas fa-file-pdf"></i> Generar PDF
+            </button>
+
+            <a href="{% url 'crear_usuario' %}" class="btn-nuevo-header">+ Nuevo Usuario</a>
+        </div>
+    </div>
+
+    <div class="card-wyk-table">
+        <div class="table-responsive">
+            <table class="table-wyk" id="tablaUsuarios">
+                <thead>
+                    <tr>
+                        <th style="width: 130px;">DOCUMENTO</th>
+                        <th>NOMBRE COMPLETO</th>
+                        <th class="text-center">ROL</th>
+                        <th>CONTACTO</th>
+                        <th class="text-center">ESTADO</th>
+                        <th class="text-center">ACCIONES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in usuarios %}
+                    <tr data-rol="{{ u.rol_fk_usuario.rol|lower }}" data-estado="{% if u.is_active %}activo{% else %}inactivo{% endif %}">
+                        <td class="fw-bold" style="color: var(--primary-color);">{{ u.num_doc }}</td>
+                        <td><div class="fw-bold text-white">{{ u.nombre }}</div></td>
+                        <td class="text-center">
+                            <span class="badge-nivel">{{ u.rol_fk_usuario.rol }}</span>
+                        </td>
+                        <td>
+                            <span class="text-contact"><i class="fas fa-envelope"></i> {{ u.email_usuario }}</span>
+                            <span class="text-contact"><i class="fas fa-phone"></i> {{ u.tel_usuario }}</span>
+                        </td>
+                        <td class="text-center">
+                            <div class="switch-container">
+                                <div class="form-check form-switch p-0 m-0">
+                                    <input class="form-check-input" type="checkbox" role="switch"
+                                           id="switch{{ u.id_usuario }}"
+                                           {% if u.is_active %}checked{% endif %}
+                                           onchange="ajaxCambiarEstadoUsuario('{{ u.id_usuario }}', this)">
+                                    <label class="form-check-label text-status-toggle {% if u.is_active %}text-active{% else %}text-inactive{% endif %}"
+                                           for="switch{{ u.id_usuario }}" id="label{{ u.id_usuario }}">
+                                        {% if u.is_active %}Activo{% else %}Inactivo{% endif %}
+                                    </label>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <a href="{% url 'editar_usuario' u.id_usuario %}" class="btn-action"><i class="fas fa-edit"></i></a>
+                            <button type="button" onclick="confirmarEliminarUsuario('{{ u.id_usuario }}', '{{ u.nombre }}')" class="btn-action" style="color: #ff8a8a;">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="filtroAvanzadoModal" tabindex="-1">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content modal-content-wyk">
+            <div class="modal-header modal-header-wyk">
+                <h5 class="modal-title text-gold"><i class="fas fa-sliders-h"></i> Filtros de Usuarios</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+
+                <span class="filter-label-group">Filtrar por Rol:</span>
+                <div class="filter-container">
+                    <div class="chip active" data-group="rol" data-filter="all">Todos</div>
+                    {% for rol in roles_lista %}
+                        <div class="chip" data-group="rol" data-filter="{{ rol.rol|lower }}">{{ rol.rol }}</div>
+                    {% endfor %}
+                </div>
+
+                <hr style="border-color: rgba(255,255,255,0.1);">
+
+                <span class="filter-label-group">Filtrar por Estado:</span>
+                <div class="filter-container">
+                    <div class="chip active" data-group="estado" data-filter="all">Mostrar Todos</div>
+                    <div class="chip" data-group="estado" data-filter="activo">Activos</div>
+                    <div class="chip" data-group="estado" data-filter="inactivo">Inactivos</div>
+                </div>
+
+            </div>
+            <div class="modal-footer" style="border-top: none;">
+                <button type="button" class="btn btn-secondary w-100" data-bs-dismiss="modal" style="border-radius: 12px;">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+<script src="{% static 'js/reportes-pdf.js' %}"></script>
+<script src="{% static 'js/sweetalert2.all.min.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // --- CONFIGURACIÓN SWAL REUTILIZANDO TU ESTILO ---
+    const swalConfig = { 
+        background: '#1a0a00', 
+        color: '#fff', 
+        confirmButtonColor: '#f5a623', 
+        heightAuto: false 
+    };
+
+    // --- LÓGICA DE FILTRADO UNIFICADA ---
+    function filtrarTodo() {
+        const textoBusqueda = document.getElementById('inputBusqueda').value.toLowerCase();
+        const rolActivo = document.querySelector('.chip[data-group="rol"].active').getAttribute('data-filter');
+        const estadoActivo = document.querySelector('.chip[data-group="estado"].active').getAttribute('data-filter');
+        const rows = document.querySelectorAll('#tablaUsuarios tbody tr');
+
+        rows.forEach(row => {
+            const textoFila = row.innerText.toLowerCase();
+            const rowRol = row.getAttribute('data-rol');
+            const rowEstado = row.getAttribute('data-estado');
+
+            const coincideBusqueda = textoFila.includes(textoBusqueda);
+            const coincideRol = (rolActivo === 'all' || rowRol === rolActivo);
+            const coincideEstado = (estadoActivo === 'all' || rowEstado === estadoActivo);
+
+            row.style.display = (coincideBusqueda && coincideRol && coincideEstado) ? '' : 'none';
+        });
+    }
+
+    // Inicializar Chips
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.chip').forEach(chip => {
+            chip.addEventListener('click', function() {
+                const group = this.getAttribute('data-group');
+                document.querySelectorAll(`.chip[data-group="${group}"]`).forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+                filtrarTodo();
+            });
+        });
+    });
+
+    // --- CAMBIAR ESTADO USUARIO (AJAX + PASS) ---
+    function ajaxCambiarEstadoUsuario(id, element) {
+        const nuevoEstado = element.checked;
+        const label = document.getElementById(`label${id}`);
+        const tr = element.closest('tr');
+        const nombreU = tr.querySelector('.text-white').innerText;
+
+        element.checked = !nuevoEstado; // Revertir temporalmente
+
+        Swal.fire({
+            ...swalConfig,
+            title: `¿Confirmar cambio para ${nombreU}?`,
+            text: "Se requiere contraseña de administrador:",
+            icon: 'warning',
+            input: 'password',
+            showCancelButton: true,
+            cancelButtonText: 'Cancelar',
+            confirmButtonText: 'Confirmar',
+            preConfirm: (password) => {
+                if (!password) { Swal.showValidationMessage('La contraseña es obligatoria'); return false; }
+                return fetch("{% url 'verificar_password_ajax' %}", {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `password=${encodeURIComponent(password)}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.valid) throw new Error('Contraseña incorrecta');
+                    return password;
+                })
+                .catch(error => { Swal.showValidationMessage(error.message); });
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch("{% url 'cambiar_estado_usuario_ajax' %}", {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}', 'X-Requested-With': 'XMLHttpRequest' },
+                    body: JSON.stringify({ id_usuario: id, nuevo_estado: nuevoEstado, password: result.value })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        element.checked = nuevoEstado;
+                        label.innerText = nuevoEstado ? 'Activo' : 'Inactivo';
+                        label.className = `form-check-label text-status-toggle ${nuevoEstado ? 'text-active' : 'text-inactive'}`;
+                        tr.setAttribute('data-estado', nuevoEstado ? 'activo' : 'inactivo');
+                        Swal.fire({ ...swalConfig, icon: 'success', title: '¡Éxito!', text: data.message });
+                    } else {
+                        Swal.fire({ ...swalConfig, icon: 'error', title: 'Error', text: data.message });
+                    }
+                });
+            }
+        });
+    }
+
+    // --- ELIMINAR USUARIO ---
+    function confirmarEliminarUsuario(id, nombre) {
+        Swal.fire({
+            ...swalConfig,
+            title: `¿Eliminar a ${nombre}?`,
+            text: "Esta acción es irreversible. Confirma con tu contraseña:",
+            icon: 'warning',
+            input: 'password',
+            showCancelButton: true,
+            cancelButtonText: 'Cancelar',
+            confirmButtonText: 'Eliminar definitivamente',
+            preConfirm: (password) => {
+                if (!password) { Swal.showValidationMessage('Contraseña requerida'); return false; }
+                return fetch("{% url 'verificar_password_ajax' %}", {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `password=${encodeURIComponent(password)}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.valid) throw new Error('Contraseña incorrecta');
+                    return password;
+                })
+                .catch(error => { Swal.showValidationMessage(error.message); });
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = "{% url 'eliminar_usuario' 0 %}".replace('0', id);
+                const csrf = document.createElement('input'); csrf.type = 'hidden'; csrf.name = 'csrfmiddlewaretoken'; csrf.value = '{{ csrf_token }}';
+                const pass = document.createElement('input'); pass.type = 'hidden'; pass.name = 'password_confirm'; pass.value = result.value;
+                form.appendChild(csrf); form.appendChild(pass);
+                document.body.appendChild(form); form.submit();
+            }
+        });
+    }
+</script>
+{% endblock %}
