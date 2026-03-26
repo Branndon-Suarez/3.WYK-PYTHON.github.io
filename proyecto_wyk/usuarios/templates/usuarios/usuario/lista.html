@@ -167,7 +167,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-    // --- MANEJO DE ALERTAS CENTRALES (COMO EN ROLES) ---
+    // --- MANEJO DE ALERTAS CENTRALES ---
     document.addEventListener('DOMContentLoaded', function() {
         const swalWykConfig = {
             background: '#1a0a00',
@@ -233,12 +233,18 @@
 
         element.checked = !nuevoEstado;
 
+        let titulo = nuevoEstado ? `¿Activar al usuario ${nombreU}?` : `¿Inactivar al usuario ${nombreU}?`;
+        let texto = nuevoEstado
+            ? "El usuario podrá volver a ingresar al sistema con sus credenciales."
+            : "¡Atención! El usuario perderá el acceso al sistema inmediatamente.";
+
         Swal.fire({
             ...swalConfig,
-            title: `¿Confirmar cambio para ${nombreU}?`,
-            text: "Se requiere contraseña de administrador:",
-            icon: 'warning',
+            title: titulo,
+            text: texto,
+            icon: nuevoEstado ? 'question' : 'warning',
             input: 'password',
+            inputAttributes: { placeholder: 'Contraseña de administrador', autocapitalize: 'off' },
             showCancelButton: true,
             cancelButtonText: 'Cancelar',
             confirmButtonText: 'Confirmar',
@@ -283,15 +289,16 @@
     function confirmarEliminarUsuario(id, nombre) {
         Swal.fire({
             ...swalConfig,
-            title: `¿Eliminar a ${nombre}?`,
-            text: "Esta acción es irreversible. Confirma con tu contraseña:",
+            title: `¿Eliminar al usuario ${nombre}?`,
+            text: "¡Atención! Esta acción es irreversible. Ingresa tu contraseña para confirmar:",
             icon: 'warning',
             input: 'password',
+            inputAttributes: { placeholder: 'Contraseña de administrador' },
             showCancelButton: true,
             cancelButtonText: 'Cancelar',
             confirmButtonText: 'Sí, eliminar',
             preConfirm: (password) => {
-                if (!password) { Swal.showValidationMessage('Contraseña requerida'); return false; }
+                if (!password) { Swal.showValidationMessage('La contraseña es obligatoria'); return false; }
                 return fetch("{% url 'verificar_password_ajax' %}", {
                     method: 'POST',
                     headers: { 'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -309,10 +316,18 @@
                 const form = document.createElement('form');
                 form.method = 'POST';
                 form.action = "{% url 'eliminar_usuario' 0 %}".replace('0', id);
-                const csrf = document.createElement('input'); csrf.type = 'hidden'; csrf.name = 'csrfmiddlewaretoken'; csrf.value = '{{ csrf_token }}';
-                const pass = document.createElement('input'); pass.type = 'hidden'; pass.name = 'password_confirm'; pass.value = result.value;
-                form.appendChild(csrf); form.appendChild(pass);
-                document.body.appendChild(form); form.submit();
+                const csrf = document.createElement('input');
+                csrf.type = 'hidden';
+                csrf.name = 'csrfmiddlewaretoken';
+                csrf.value = '{{ csrf_token }}';
+                const pass = document.createElement('input');
+                pass.type = 'hidden';
+                pass.name = 'password_confirm';
+                pass.value = result.value;
+                form.appendChild(csrf);
+                form.appendChild(pass);
+                document.body.appendChild(form);
+                form.submit();
             }
         });
     }
