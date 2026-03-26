@@ -1,10 +1,225 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends 'base.html' %}
+{% load static %}
 
-</body>
-</html>
+{% block title %}Editar Usuario - WYK{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/dashboard-formularios.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dashboard-tablas.css' %}">
+    <style>
+        /* Estilos funcionales específicos para la edición */
+        .password-wrapper { position: relative; display: flex; align-items: center; }
+        .btn-toggle-eye {
+            position: absolute; right: 15px; background: transparent; border: none;
+            color: var(--primary-wyk); cursor: pointer; z-index: 5; transition: 0.3s;
+        }
+        .input-password { padding-right: 45px !important; }
+
+        .role-selector-group { display: flex; gap: 10px; }
+        .btn-search-role {
+            background: var(--primary-wyk); border: none; color: #1a0a00;
+            width: 50px; border-radius: 8px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; transition: 0.3s;
+        }
+
+        .info-edit { color: rgba(255,255,255,0.6); font-size: 0.85rem; margin-top: 5px; }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="main-form-wrapper fade-in">
+    <div class="form-header-wyk">
+        <h2>Actualizar Perfil de Usuario</h2>
+        <p>Modificando información de: <strong>{{ usuario.nombre }}</strong></p>
+    </div>
+
+    <div class="form-container-wyk">
+        <form method="post" id="formEditarUsuario">
+            {% csrf_token %}
+
+            <div class="form-group-wyk">
+                <label class="form-label-wyk">Número de Documento</label>
+                <input type="number" name="num_doc" id="id_num_doc" class="input-wyk"
+                       value="{{ form.num_doc.value|default:usuario.num_doc }}" required>
+            </div>
+
+            <div class="form-group-wyk">
+                <label class="form-label-wyk">Nombre Completo</label>
+                <input type="text" name="nombre" id="id_nombre" class="input-wyk"
+                       value="{{ form.nombre.value|default:usuario.nombre }}" required>
+            </div>
+
+            <div class="form-group-wyk">
+                <label class="form-label-wyk">Correo Electrónico</label>
+                <input type="email" name="email_usuario" id="id_email" class="input-wyk"
+                       value="{{ form.email_usuario.value|default:usuario.email_usuario }}" required>
+            </div>
+
+            <div class="form-group-wyk">
+                <label class="form-label-wyk">Teléfono / Celular</label>
+                <input type="text" name="tel_usuario" id="id_telefono" class="input-wyk"
+                       value="{{ form.tel_usuario.value|default:usuario.tel_usuario }}">
+            </div>
+
+            <div class="form-group-wyk">
+                <label class="form-label-wyk">Rol Asignado</label>
+                <div class="role-selector-group">
+                    <input type="text" id="rol_nombre_display" class="input-wyk"
+                           value="{{ usuario.rol_fk_usuario.rol }}" readonly required>
+                    <input type="hidden" name="rol_fk_usuario" id="id_rol_hidden"
+                           value="{{ form.rol_fk_usuario.value|default:usuario.rol_fk_usuario.id_rol }}" required>
+                    <button type="button" class="btn-search-role" data-bs-toggle="modal" data-bs-target="#modalRoles">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-group-wyk">
+                <label class="form-label-wyk">Contraseña (Dejar en blanco para no cambiar)</label>
+                <div class="password-wrapper">
+                    <input type="password" name="password" id="id_password" class="input-wyk input-password"
+                           placeholder="Nueva contraseña si aplica">
+                    <button type="button" class="btn-toggle-eye" onclick="togglePassword()">
+                        <i class="fas fa-eye" id="eyeIcon"></i>
+                    </button>
+                </div>
+                <p class="info-edit"><i class="fas fa-info-circle"></i> Solo escribe aquí si deseas cambiar la clave del usuario.</p>
+            </div>
+
+            <div class="form-actions-wyk">
+                <button type="button" onclick="confirmarActualizacion()" class="btn-save-wyk">
+                    <i class="fas fa-sync-alt"></i> Aplicar Cambios
+                </button>
+                <a href="{% url 'lista_usuarios' %}" class="btn-cancel-wyk">
+                    <i class="fas fa-times"></i> Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade modal-wyk-custom" id="modalRoles" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header modal-header-wyk">
+                <h5 class="modal-title text-gold"><i class="fas fa-user-tag me-2"></i> Cambiar Rol</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="table-responsive">
+                    <table class="table-wyk mb-0" id="tablaSelector">
+                        <thead>
+                            <tr>
+                                <th style="width: 80px;" class="text-center">ID</th>
+                                <th>NOMBRE DEL ROL</th>
+                                <th class="text-center">NIVEL</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in roles %}
+                            {% if r.estado_rol %}
+                            <tr class="fila-seleccionable" data-id="{{ r.id_rol }}" data-nombre="{{ r.rol }}">
+                                <td class="text-center text-gold">{{ r.id_rol }}</td>
+                                <td class="text-white">{{ r.rol }}</td>
+                                <td class="text-center"><span class="badge-nivel">{{ r.get_clasificacion_display }}</span></td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/sweetalert2.all.min.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const swalConfig = {
+        background: '#1a0a00',
+        color: '#fff',
+        confirmButtonColor: '#f5a623',
+        heightAuto: false,
+        scrollbarPadding: false
+    };
+
+    {% if messages %}
+        {% for message in messages %}
+            Swal.fire({
+                ...swalConfig,
+                icon: "{% if message.tags == 'success' %}success{% else %}error{% endif %}",
+                title: "{% if message.tags == 'success' %}¡Listo!{% else %}¡Atención!{% endif %}",
+                text: "{{ message|escapejs }}"
+            });
+        {% endfor %}
+    {% endif %}
+
+    /* LÓGICA DE SELECCIÓN DE ROL */
+    document.addEventListener('DOMContentLoaded', function() {
+        const filas = document.querySelectorAll('.fila-seleccionable');
+        filas.forEach(fila => {
+            fila.onclick = function() {
+                const id = this.getAttribute('data-id');
+                const nombre = this.getAttribute('data-nombre');
+
+                document.getElementById('id_rol_hidden').value = id;
+                document.getElementById('rol_nombre_display').value = nombre;
+
+                // Cerrar modal usando instancia de Bootstrap 5
+                const modalEl = document.getElementById('modalRoles');
+                const modalInst = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                modalInst.hide();
+            };
+        });
+
+        // Sincronizar nombre inicial del rol
+        const hiddenRolId = document.getElementById('id_rol_hidden').value;
+        const filaActiva = document.querySelector(`#tablaSelector tbody tr[data-id="${hiddenRolId}"]`);
+        if(filaActiva) {
+            document.getElementById('rol_nombre_display').value = filaActiva.getAttribute('data-nombre');
+        }
+    });
+
+    function togglePassword() {
+        const input = document.getElementById('id_password');
+        const icon = document.getElementById('eyeIcon');
+        input.type = input.type === 'password' ? 'text' : 'password';
+        icon.classList.toggle('fa-eye');
+        icon.classList.toggle('fa-eye-slash');
+    }
+
+    function confirmarActualizacion() {
+        const nombre = document.getElementById('id_nombre').value.trim();
+        const doc = document.getElementById('id_num_doc').value.trim();
+        const email = document.getElementById('id_email').value.trim();
+        const rol = document.getElementById('id_rol_hidden').value;
+
+        if (!nombre || !doc || !email || !rol) {
+            Swal.fire({
+                ...swalConfig,
+                icon: 'warning',
+                title: 'Campos incompletos',
+                text: 'Los campos básicos no pueden quedar vacíos.'
+            });
+            return;
+        }
+
+        Swal.fire({
+            ...swalConfig,
+            title: '¿Guardar cambios?',
+            text: `Se actualizará la información de "${nombre}".`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, aplicar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('formEditarUsuario').submit();
+            }
+        });
+    }
+</script>
+{% endblock %}

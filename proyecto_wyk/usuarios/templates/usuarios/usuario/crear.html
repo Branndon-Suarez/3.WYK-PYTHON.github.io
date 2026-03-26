@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="{% static 'css/dashboard-formularios.css' %}">
     <link rel="stylesheet" href="{% static 'css/dashboard-tablas.css' %}">
     <style>
-        /* Estilos de inputs y contraseña */
         .password-wrapper { position: relative; display: flex; align-items: center; }
         .btn-toggle-eye {
             position: absolute; right: 15px; background: transparent; border: none;
@@ -21,51 +20,6 @@
             width: 50px; border-radius: 8px; cursor: pointer;
             display: flex; align-items: center; justify-content: center; transition: 0.3s;
         }
-
-        /* --- CORRECCIÓN PARA QUE EL MODAL-LG NO SE DESBORDE --- */
-        .modal {
-            display: none;
-            position: fixed !important;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 99999 !important;
-            outline: 0;
-        }
-
-        .modal.show {
-            display: block !important;
-            background: rgba(0, 0, 0, 0.85) !important;
-        }
-
-        .modal-dialog {
-            margin: 1.75rem auto;
-            display: flex;
-            align-items: center;
-            min-height: calc(100% - 3.5rem);
-        }
-
-        .modal-dialog.modal-lg {
-            max-width: 800px;
-            width: 90%;
-        }
-
-        .modal-content-wyk {
-            background: #1a0a00 !important;
-            border: 2px solid var(--primary-wyk) !important;
-            border-radius: 15px !important;
-            box-shadow: 0 0 30px rgba(245, 166, 35, 0.4);
-            width: 100%;
-        }
-
-        .modal-header-wyk {
-            border-bottom: 1px solid rgba(245, 166, 35, 0.2) !important;
-            padding: 20px;
-        }
-        .fila-seleccionable { cursor: pointer; transition: 0.2s; }
-        .fila-seleccionable:hover { background: rgba(245, 166, 35, 0.15) !important; }
-        .text-gold { color: var(--primary-wyk) !important; font-weight: bold; }
     </style>
 {% endblock %}
 
@@ -82,28 +36,28 @@
             <div class="form-group-wyk">
                 <label class="form-label-wyk">Número de Documento</label>
                 <input type="number" name="num_doc" id="id_num_doc" class="input-wyk"
-                       placeholder="Ej: 10203040" value="{{ request.POST.num_doc|default:'' }}" required>
+                       placeholder="Ej: 10203040" value="{{ form.num_doc.value|default:'' }}" required>
             </div>
             <div class="form-group-wyk">
                 <label class="form-label-wyk">Nombre Completo</label>
                 <input type="text" name="nombre" id="id_nombre" class="input-wyk"
-                       placeholder="Nombre y Apellido" value="{{ request.POST.nombre|default:'' }}" required>
+                       placeholder="Nombre y Apellido" value="{{ form.nombre.value|default:'' }}" required>
             </div>
             <div class="form-group-wyk">
                 <label class="form-label-wyk">Correo Electrónico</label>
-                <input type="email" name="email" id="id_email" class="input-wyk"
-                       placeholder="ejemplo@wyk.com" value="{{ request.POST.email|default:'' }}" required>
+                <input type="email" name="email_usuario" id="id_email" class="input-wyk"
+                       placeholder="ejemplo@wyk.com" value="{{ form.email_usuario.value|default:'' }}" required>
             </div>
             <div class="form-group-wyk">
                 <label class="form-label-wyk">Teléfono / Celular</label>
-                <input type="text" name="telefono" id="id_telefono" class="input-wyk"
-                       placeholder="300 000 0000" value="{{ request.POST.telefono|default:'' }}">
+                <input type="text" name="tel_usuario" id="id_telefono" class="input-wyk"
+                       placeholder="300 000 0000" value="{{ form.tel_usuario.value|default:'' }}">
             </div>
             <div class="form-group-wyk">
                 <label class="form-label-wyk">Rol del Trabajador</label>
                 <div class="role-selector-group">
                     <input type="text" id="rol_nombre_display" class="input-wyk" placeholder="Selecciona un rol..." readonly required>
-                    <input type="hidden" name="rol" id="id_rol_hidden" value="{{ request.POST.rol|default:'' }}" required>
+                    <input type="hidden" name="rol_fk_usuario" id="id_rol_hidden" value="{{ form.rol_fk_usuario.value|default:'' }}" required>
                     <button type="button" class="btn-search-role" data-bs-toggle="modal" data-bs-target="#modalRoles">
                         <i class="fas fa-search"></i>
                     </button>
@@ -130,9 +84,9 @@
     </div>
 </div>
 
-<div class="modal fade" id="modalRoles" tabindex="-1" aria-hidden="true">
+<div class="modal fade modal-wyk-custom" id="modalRoles" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content modal-content-wyk">
+        <div class="modal-content">
             <div class="modal-header modal-header-wyk">
                 <h5 class="modal-title text-gold"><i class="fas fa-user-tag me-2"></i> Seleccionar Rol Activo</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -184,31 +138,23 @@
                 ...swalConfig,
                 icon: "{% if message.tags == 'success' %}success{% else %}error{% endif %}",
                 title: "{% if message.tags == 'success' %}¡Listo!{% else %}¡Atención!{% endif %}",
-                text: "{{ message|safe }}"
+                text: "{{ message|escapejs }}"
             });
         {% endfor %}
     {% endif %}
 
+    /* SELECTOR DE ROL */
     document.querySelectorAll('#tablaSelector tbody tr').forEach(fila => {
         fila.addEventListener('click', function() {
             const id = this.getAttribute('data-id');
             const nombre = this.getAttribute('data-nombre');
             document.getElementById('id_rol_hidden').value = id;
             document.getElementById('rol_nombre_display').value = nombre;
+
             const modalEl = document.getElementById('modalRoles');
-            const modalInst = bootstrap.Modal.getOrCreateInstance(modalEl);
+            const modalInst = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
             modalInst.hide();
         });
-    });
-
-    window.addEventListener('DOMContentLoaded', () => {
-        const hiddenRolId = document.getElementById('id_rol_hidden').value;
-        if(hiddenRolId) {
-            const fila = document.querySelector(`#tablaSelector tbody tr[data-id="${hiddenRolId}"]`);
-            if(fila) {
-                document.getElementById('rol_nombre_display').value = fila.getAttribute('data-nombre');
-            }
-        }
     });
 
     function togglePassword() {
@@ -224,15 +170,14 @@
         const doc = document.getElementById('id_num_doc').value.trim();
         const email = document.getElementById('id_email').value.trim();
         const rol = document.getElementById('id_rol_hidden').value;
-        const password = document.getElementById('id_password').value; // Nueva validación
+        const password = document.getElementById('id_password').value;
 
-        // Validación de campos obligatorios incluyendo la contraseña
         if (!nombre || !doc || !email || !rol || !password) {
             Swal.fire({
                 ...swalConfig,
                 icon: 'warning',
                 title: 'Campos incompletos',
-                text: 'Por favor, asegúrate de llenar todos los campos obligatorios, incluyendo la contraseña.'
+                text: 'Por favor, llena todos los campos obligatorios.'
             });
             return;
         }
@@ -240,7 +185,7 @@
         Swal.fire({
             ...swalConfig,
             title: '¿Registrar nuevo usuario?',
-            text: `¿Crear cuenta para "${nombre}"?`,
+            text: `Se creará la cuenta para "${nombre}".`,
             icon: 'question',
             showCancelButton: true,
             confirmButtonText: 'Sí, registrar',
