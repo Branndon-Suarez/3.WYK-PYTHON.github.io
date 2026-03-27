@@ -16,6 +16,8 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
 from usuarios import views
 
 urlpatterns = [
@@ -27,4 +29,11 @@ urlpatterns = [
 
     # TODO lo que tenga que ver con la app usuarios va dentro de su propio include
     path('usuarios/', include('usuarios.urls')),
+
+    # Rutas de la aplicación Inventario
+    path('inventario/', include('inventario.urls')),
 ]
+
+# ESTA PARTE PERMITE QUE DJANGO SIRVA LAS IMÁGENES DE LA CARPETA MEDIA
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

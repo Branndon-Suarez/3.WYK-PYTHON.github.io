@@ -14,6 +14,10 @@ class Producto(models.Model):
 
     id_producto = models.BigIntegerField(primary_key=True, db_column='id_producto')
     nombre_producto = models.CharField(max_length=50, unique=True, db_column='nombre_producto')
+
+    # NUEVO CAMPO PARA IMAGEN
+    imagen_producto = models.ImageField(upload_to='productos/', null=True, blank=True, db_column='imagen_producto')
+
     valor_unitario_product = models.BigIntegerField(db_column='valor_unitario_producto')
     cant_exist_producto = models.BigIntegerField(db_column='cant_exist_producto')
     fecha_vencimiento_product = models.DateField(db_column='fecha_vencimiento_producto')

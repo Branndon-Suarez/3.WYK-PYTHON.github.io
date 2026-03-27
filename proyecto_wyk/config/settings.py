@@ -134,6 +134,13 @@ STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
 
+# --- CONFIGURACIÓN DE ARCHIVOS MULTIMEDIA (IMÁGENES) ---
+# URL para acceder a las imágenes desde el navegador
+MEDIA_URL = '/media/'
+
+# Carpeta física donde se guardarán las imágenes en tu computadora
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 # Configuración de campos automáticos para modelos
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
