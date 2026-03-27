@@ -42,12 +42,12 @@
                 {% if user.rol_fk_usuario.rol == 'ADMIN' %}
                 <div class="nav-section">GESTIÓN USUARIOS</div>
 
-                <a href="{% url 'lista_roles' %}" class="nav-item {% if '/roles/' in request.path %}active{% endif %}">
+                <a href="{% url 'lista_roles' %}" class="nav-item {% if 'roles' in request.path %}active{% endif %}">
                     <i class="fa fa-user-shield"></i>
                     <span>Roles</span>
                 </a>
 
-                <a href="{% url 'lista_usuarios' %}" class="nav-item {% if '/usuario/' in request.path %}active{% endif %}">
+                <a href="{% url 'lista_usuarios' %}" class="nav-item {% if 'usuario' in request.path %}active{% endif %}">
                     <i class="fa fa-users"></i>
                     <span>Usuarios</span>
                 </a>
@@ -55,22 +55,22 @@
 
                 <div class="nav-section">INVENTARIO</div>
 
-                <a href="{% url 'lista_productos' %}" class="nav-item {% if '/producto/' in request.path %}active{% endif %}">
+                <a href="{% url 'lista_productos' %}" class="nav-item {% if 'producto' in request.path %}active{% endif %}">
                     <i class="fa fa-box"></i>
                     <span>Productos</span>
                 </a>
 
-                <a href="javascript:void(0)" class="nav-item">
+                <a href="{% url 'lista_materia_prima' %}" class="nav-item {% if 'materia_prima' in request.path %}active{% endif %}">
                     <i class="fa fa-leaf"></i>
                     <span>Materia Prima</span>
                 </a>
 
-                <a href="javascript:void(0)" class="nav-item">
+                <a href="{% url 'lista_ajustes_producto' %}" class="nav-item {% if 'ajustes/productos' in request.path %}active{% endif %}">
                     <i class="fa fa-sliders-h"></i>
                     <span>Ajuste Productos</span>
                 </a>
 
-                <a href="javascript:void(0)" class="nav-item">
+                <a href="{% url 'lista_ajustes_materia_prima' %}" class="nav-item {% if 'ajustes/materia' in request.path %}active{% endif %}">
                     <i class="fa fa-sliders-h"></i>
                     <span>Ajuste Materia Prima</span>
                 </a>

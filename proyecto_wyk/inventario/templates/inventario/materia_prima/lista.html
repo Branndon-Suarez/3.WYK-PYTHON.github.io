@@ -1,0 +1,306 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Inventario Materia Prima - WYK{% endblock %}
+
+{% block extra_css %}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/dashboard-tablas.css' %}">
+
+    <style>
+        .text-info-secundaria {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.5);
+            display: block;
+        }
+
+        .filter-label-group {
+            display: block;
+            color: var(--primary-color);
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            margin-top: 15px;
+        }
+
+        .swal2-validation-message {
+            background-color: transparent !important;
+            color: #ff8a8a !important;
+            font-weight: 600 !important;
+            border: none !important;
+            margin-top: 15px !important;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container-custom fade-in">
+    <div class="header">
+        <div class="greeting">
+            <div class="s">Materia <span class="n">Prima</span></div>
+            <div class="subtitle" style="opacity: 0.8; font-size: 0.85rem; color: white;">Control de insumos y suministros básicos</div>
+        </div>
+
+        <div class="d-flex align-items-center">
+            <div class="search-container me-3">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    <input type="text" id="inputBusqueda" class="form-control" placeholder="Buscar insumo..." onkeyup="filtrarTodo()">
+                </div>
+            </div>
+
+            <button type="button" class="btn-filtro-header me-3" data-bs-toggle="modal" data-bs-target="#filtroMateriaModal">
+                <i class="fas fa-filter"></i> Filtros
+            </button>
+
+            <button type="button" class="btn-nuevo-header me-3" onclick="generarPDFGlobal('tablaMateriaPrima', 'Inventario de Materia Prima', [0, 7])">
+                <i class="fas fa-file-pdf"></i> GENERAR PDF
+            </button>
+
+            <a href="{% url 'crear_materia_prima' %}" class="btn-nuevo-header">+ Nuevo Insumo</a>
+        </div>
+    </div>
+
+    <div class="card-wyk-table">
+        <div class="table-responsive">
+            <table class="table-wyk" id="tablaMateriaPrima">
+                <thead>
+                    <tr>
+                        <th class="text-center">ID</th>
+                        <th>INSUMO</th>
+                        <th class="text-end">V. UNITARIO</th>
+                        <th class="text-center">EXISTENCIAS</th>
+                        <th class="text-center">VENCIMIENTO</th>
+                        <th>REGISTRADO POR</th>
+                        <th class="text-center">ESTADO</th>
+                        <th class="text-center">ACCIONES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in materias %}
+                    <tr data-estado="{% if m.estado_materia_prima %}activo{% else %}inactivo{% endif %}">
+                        <td class="text-center fw-bold" style="color: var(--primary-color);">{{ m.id_materia_prima }}</td>
+                        <td>
+                            <div class="fw-bold text-white">{{ m.nombre_materia_prima }}</div>
+                            <span class="text-info-secundaria">{{ m.presentacion_mat_prima }}</span>
+                        </td>
+                        <td class="text-end fw-bold" style="color: var(--primary-color); font-family: 'Courier New', Courier, monospace;">
+                            ${{ m.valor_unitario_mat_prima }}
+                        </td>
+                        <td class="text-center">
+                            <div class="fw-bold {% if m.cantidad_exist_mat_prima < 10 %}text-danger{% else %}text-white{% endif %}">
+                                {{ m.cantidad_exist_mat_prima }}
+                            </div>
+                            <span class="text-info-secundaria">unidades</span>
+                        </td>
+                        <td class="text-center text-white" style="font-size: 0.85rem;">
+                            {{ m.fecha_vencimiento_mat_prima|date:"d/m/Y" }}
+                        </td>
+                        <td>
+                            <div class="text-white" style="font-size: 0.85rem;">{{ m.id_usuario_fk_mat_prima.nombre }}</div>
+                            <span class="text-info-secundaria">{{ m.id_usuario_fk_mat_prima.rol_fk_usuario.rol }}</span>
+                        </td>
+                        <td class="text-center">
+                            <div class="switch-container">
+                                <div class="form-check form-switch p-0 m-0">
+                                    <input class="form-check-input" type="checkbox" role="switch"
+                                           id="switch{{ m.id_materia_prima }}"
+                                           {% if m.estado_materia_prima %}checked{% endif %}
+                                           onchange="ajaxCambiarEstadoMateria('{{ m.id_materia_prima }}', this)">
+                                    <label class="form-check-label text-status-toggle {% if m.estado_materia_prima %}text-active{% else %}text-inactive{% endif %}"
+                                           for="switch{{ m.id_materia_prima }}" id="label{{ m.id_materia_prima }}">
+                                        {% if m.estado_materia_prima %}Activo{% else %}Inactivo{% endif %}
+                                    </label>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <a href="{% url 'editar_materia_prima' m.id_materia_prima %}" class="btn-action"><i class="fas fa-edit"></i></a>
+                            <button type="button" onclick="confirmarEliminarMateria('{{ m.id_materia_prima }}', '{{ m.nombre_materia_prima }}')" class="btn-action" style="color: #ff8a8a;">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4">No hay insumos registrados en el inventario de materia prima.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="filtroMateriaModal" tabindex="-1">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content modal-content-wyk">
+            <div class="modal-header modal-header-wyk">
+                <h5 class="modal-title text-gold"><i class="fas fa-sliders-h"></i> Filtros de Insumos</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <span class="filter-label-group">Estado del Insumo:</span>
+                <div class="filter-container">
+                    <div class="chip active" data-group="estado" data-filter="all">Mostrar Todos</div>
+                    <div class="chip" data-group="estado" data-filter="activo">Activos</div>
+                    <div class="chip" data-group="estado" data-filter="inactivo">Inactivos</div>
+                </div>
+            </div>
+            <div class="modal-footer" style="border-top: none;">
+                <button type="button" class="btn btn-secondary w-100" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+<script src="{% static 'js/reportes-pdf.js' %}"></script>
+<script src="{% static 'js/sweetalert2.all.min.js' %}"></script>
+
+<script>
+    const swalWykConfig = {
+        background: '#1a0a00',
+        color: '#fff',
+        confirmButtonColor: '#f5a623',
+        heightAuto: false,
+        allowOutsideClick: false
+    };
+
+    document.addEventListener('DOMContentLoaded', function() {
+        {% if messages %}
+            {% for message in messages %}
+                Swal.fire({
+                    ...swalWykConfig,
+                    icon: "{% if 'success' in message.tags %}success{% else %}error{% endif %}",
+                    title: "{% if 'success' in message.tags %}¡Operación Exitosa!{% else %}Atención{% endif %}",
+                    text: "{{ message|escapejs }}",
+                    confirmButtonText: 'Aceptar'
+                });
+            {% endfor %}
+        {% endif %}
+
+        document.querySelectorAll('.chip').forEach(chip => {
+            chip.addEventListener('click', function() {
+                const group = this.getAttribute('data-group');
+                document.querySelectorAll(`.chip[data-group="${group}"]`).forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+                filtrarTodo();
+            });
+        });
+    });
+
+    function filtrarTodo() {
+        const busqueda = document.getElementById('inputBusqueda').value.toLowerCase();
+        const estadoActivo = document.querySelector('.chip[data-group="estado"].active').getAttribute('data-filter');
+        const rows = document.querySelectorAll('#tablaMateriaPrima tbody tr');
+
+        rows.forEach(row => {
+            const texto = row.innerText.toLowerCase();
+            const rowEstado = row.getAttribute('data-estado');
+
+            const coincideBusqueda = texto.includes(busqueda);
+            const coincideEstado = (estadoActivo === 'all' || rowEstado === estadoActivo);
+
+            row.style.display = (coincideBusqueda && coincideEstado) ? '' : 'none';
+        });
+    }
+
+    function ajaxCambiarEstadoMateria(id, element) {
+        const nuevoEstado = element.checked;
+        element.checked = !nuevoEstado;
+
+        Swal.fire({
+            ...swalWykConfig,
+            title: nuevoEstado ? '¿Activar Insumo?' : '¿Inactivar Insumo?',
+            text: "Se requiere confirmación administrativa. Ingrese su contraseña:",
+            icon: 'question',
+            input: 'password',
+            inputPlaceholder: 'Contraseña de administrador',
+            showCancelButton: true,
+            confirmButtonText: 'Confirmar',
+            cancelButtonText: 'Cancelar',
+            preConfirm: (password) => {
+                if (!password) { Swal.showValidationMessage('La contraseña es requerida'); return false; }
+                return fetch("{% url 'verificar_password_ajax' %}", {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `password=${encodeURIComponent(password)}`
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.valid) throw new Error('Contraseña incorrecta');
+                    return password;
+                })
+                .catch(error => { Swal.showValidationMessage(error.message); });
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch("{% url 'cambiar_estado_materia_prima_ajax' %}", {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}', 'X-Requested-With': 'XMLHttpRequest' },
+                    body: JSON.stringify({ id_materia_prima: id, nuevo_estado: nuevoEstado, password: result.value })
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        element.checked = nuevoEstado;
+                        const label = document.getElementById(`label${id}`);
+                        label.innerText = nuevoEstado ? 'Activo' : 'Inactivo';
+                        label.className = `form-check-label text-status-toggle ${nuevoEstado ? 'text-active' : 'text-inactive'}`;
+                        element.closest('tr').setAttribute('data-estado', nuevoEstado ? 'activo' : 'inactivo');
+                        Swal.fire({ ...swalWykConfig, icon: 'success', title: '¡Listo!', text: 'Estado actualizado correctamente.' });
+                    } else {
+                        Swal.fire({ ...swalWykConfig, icon: 'error', title: 'Error', text: data.message });
+                    }
+                });
+            }
+        });
+    }
+
+    function confirmarEliminarMateria(id, nombre) {
+        Swal.fire({
+            ...swalWykConfig,
+            title: `¿Eliminar ${nombre}?`,
+            text: "Esta acción no se puede deshacer. Confirme su contraseña:",
+            icon: 'warning',
+            input: 'password',
+            inputPlaceholder: 'Contraseña de administrador',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar',
+            preConfirm: (password) => {
+                if (!password) { Swal.showValidationMessage('La contraseña es obligatoria'); return false; }
+                return fetch("{% url 'verificar_password_ajax' %}", {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `password=${encodeURIComponent(password)}`
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.valid) throw new Error('Contraseña incorrecta');
+                    return password;
+                })
+                .catch(error => { Swal.showValidationMessage(error.message); });
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = "{% url 'eliminar_materia_prima' 0 %}".replace('0', id);
+                const csrf = document.createElement('input');
+                csrf.type = 'hidden'; csrf.name = 'csrfmiddlewaretoken'; csrf.value = '{{ csrf_token }}';
+                const pass = document.createElement('input');
+                pass.type = 'hidden'; pass.name = 'password_confirm'; pass.value = result.value;
+                form.appendChild(csrf); form.appendChild(pass);
+                document.body.appendChild(form); form.submit();
+            }
+        });
+    }
+</script>
+{% endblock %}
