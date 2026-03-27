@@ -1,8 +1,8 @@
 /* VARIABLES PANADERÍA UNIFICADAS */
 :root {
-    --primary: #0b0500;    /* Fondo oscuro idéntico a tu dashboard */
-    --accent: #f59e0b;     /* Dorado/Naranja WYK */
-    --bg-dark: #0b0500;    /* Fondo general */
+    --primary: #0b0500;
+    --accent: #f59e0b;
+    --bg-dark: #0b0500;
     --text-white: #ffffff;
     --sidebar-width: 260px;
     --sidebar-collapsed: 80px;
@@ -14,10 +14,15 @@
     padding: 0;
     box-sizing: border-box;
     font-family: 'Inter', sans-serif;
+    /* 1. CLAVE: Reserva el espacio de la barra de scroll siempre,
+       así el dashboard no se "mueve" al no tener scroll */
+    scrollbar-gutter: stable;
 }
 
 body {
     background-color: var(--bg-dark);
+    /* 2. Asegura que el cuerpo siempre ocupe el alto total */
+    min-height: 100vh;
 }
 
 .app-container {
@@ -39,9 +44,10 @@ body {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 1000;
     border-right: 1px solid rgba(255, 255, 255, 0.05);
+    overflow: hidden;
 }
 
-/* ESTADO COLAPSADO (Cerrado) */
+/* ESTADO COLAPSADO */
 .sidebar.collapsed {
     width: var(--sidebar-collapsed);
     min-width: var(--sidebar-collapsed);
@@ -53,7 +59,8 @@ body {
     display: flex;
     align-items: center;
     gap: 15px;
-    height: 100px; /* Altura aumentada para que el logo respire */
+    height: 100px;
+    flex-shrink: 0; /* 3. Evita que el logo se aplaste en pantallas pequeñas */
 }
 
 .toggle-btn-sidebar {
@@ -73,13 +80,12 @@ body {
 }
 
 .sidebar-logo {
-    min-width: 55px; /* Ajustado al nuevo tamaño del logo */
+    min-width: 55px;
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
-/* Ajuste específico para el logo más grande */
 .sidebar-logo img {
     width: 55px;
     height: auto;
@@ -101,10 +107,30 @@ body {
     white-space: nowrap;
 }
 
-/* NAVEGACIÓN */
+/* NAVEGACIÓN - Única parte con scroll */
 .sidebar-nav {
     flex: 1;
     padding: 10px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0; /* Permite que el contenedor sepa que puede activarse el scroll */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+/* Personalización del scroll */
+.sidebar-nav::-webkit-scrollbar {
+    width: 5px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+    background: rgba(245, 158, 11, 0.2);
+    border-radius: 10px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+    background: var(--accent);
 }
 
 .nav-section {
@@ -114,6 +140,7 @@ body {
     color: var(--accent);
     opacity: 0.6;
     letter-spacing: 1px;
+    flex-shrink: 0;
 }
 
 .nav-item {
@@ -125,6 +152,7 @@ body {
     border-radius: 12px;
     margin-bottom: 5px;
     transition: all 0.3s;
+    flex-shrink: 0;
 }
 
 .nav-item i {
@@ -154,6 +182,7 @@ body {
 .sidebar-footer {
     padding: 20px;
     border-top: 1px solid rgba(255, 255, 255, 0.05);
+    flex-shrink: 0;
 }
 
 .btn-logout {
@@ -167,39 +196,17 @@ body {
     transition: 0.3s;
 }
 
-.btn-logout:hover {
-    background: rgba(255, 138, 138, 0.1);
-}
-
-/* --- REGLAS CUANDO ESTÁ CERRADO (COLLAPSED) --- */
-
-/* Escondemos el contenedor del logo y el título */
+/* REGLAS COLLAPSED */
 .sidebar.collapsed .sidebar-logo,
-.sidebar.collapsed .sidebar-title {
-    display: none;
-}
-
-.sidebar.collapsed .sidebar-header {
-    justify-content: center;
-    padding: 25px 0;
-}
-
-.sidebar.collapsed .nav-item {
-    justify-content: center;
-    padding: 15px 0;
-}
-
-.sidebar.collapsed .nav-item i {
-    margin: 0;
-    font-size: 20px;
-}
-
+.sidebar.collapsed .sidebar-title,
 .sidebar.collapsed .nav-item span,
 .sidebar.collapsed .nav-section,
 .sidebar.collapsed .btn-logout span {
     display: none;
 }
 
+.sidebar.collapsed .sidebar-header,
+.sidebar.collapsed .nav-item,
 .sidebar.collapsed .btn-logout {
     justify-content: center;
 }

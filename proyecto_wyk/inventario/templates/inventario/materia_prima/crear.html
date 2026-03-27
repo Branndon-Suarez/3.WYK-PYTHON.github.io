@@ -1,10 +1,120 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends 'base.html' %}
+{% load static %}
 
-</body>
-</html>
+{% block title %}Nueva Materia Prima - WYK{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/dashboard-formularios.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="main-form-wrapper fade-in">
+    <div class="form-header-wyk">
+        <h2>Registrar Materia Prima</h2>
+        <p>Ingresa los detalles de los insumos y suministros básicos para la producción.</p>
+    </div>
+
+    <div class="form-container-wyk">
+        <form method="post" id="formCrearMateria">
+            {% csrf_token %}
+
+            <input type="hidden" name="estado_materia_prima" value="True">
+
+            <div class="row">
+                <div class="form-group-wyk col-md-4">
+                    <label class="form-label-wyk">Código / ID</label>
+                    <input type="number" name="id_materia_prima" id="id_id_materia" class="input-wyk"
+                           placeholder="Ej: 5001" value="{{ request.POST.id_materia_prima|default:'' }}" required>
+                </div>
+
+                <div class="form-group-wyk col-md-8">
+                    <label class="form-label-wyk">Nombre del Insumo</label>
+                    <input type="text" name="nombre_materia_prima" id="id_nombre_materia" class="input-wyk"
+                           placeholder="Ej: Harina de Trigo" value="{{ request.POST.nombre_materia_prima|default:'' }}" required>
+                </div>
+
+                <div class="form-group-wyk col-md-4">
+                    <label class="form-label-wyk">Valor Unitario ($)</label>
+                    <input type="number" name="valor_unitario_mat_prima" id="id_valor_mat" class="input-wyk"
+                           placeholder="0.00" step="0.01" value="{{ request.POST.valor_unitario_mat_prima|default:'' }}" required>
+                </div>
+
+                <div class="form-group-wyk col-md-4">
+                    <label class="form-label-wyk">Cantidad Inicial</label>
+                    <input type="number" name="cantidad_exist_mat_prima" id="id_stock_mat" class="input-wyk"
+                           placeholder="0" value="{{ request.POST.cantidad_exist_mat_prima|default:'' }}" required>
+                </div>
+
+                <div class="form-group-wyk col-md-4">
+                    <label class="form-label-wyk">Presentación</label>
+                    <input type="text" name="presentacion_mat_prima" id="id_presentacion" class="input-wyk"
+                           placeholder="Ej: Bulto 50kg" value="{{ request.POST.presentacion_mat_prima|default:'' }}" required>
+                </div>
+
+                <div class="form-group-wyk col-md-6">
+                    <label class="form-label-wyk">Fecha de Vencimiento</label>
+                    <input type="date" name="fecha_vencimiento_mat_prima" id="id_fecha_venc_mat" class="input-wyk"
+                           value="{{ request.POST.fecha_vencimiento_mat_prima|default:'' }}" required>
+                </div>
+
+                <div class="form-group-wyk col-md-12">
+                    <label class="form-label-wyk">Descripción del Insumo</label>
+                    <textarea name="descripcion_mat_prima" id="id_descripcion" class="input-wyk" rows="2"
+                              placeholder="Detalles adicionales sobre el insumo..." required>{{ request.POST.descripcion_mat_prima|default:'' }}</textarea>
+                </div>
+            </div>
+
+            <div class="form-actions-wyk mt-4">
+                <button type="button" onclick="confirmarRegistroMateria()" class="btn-save-wyk">
+                    <i class="fas fa-check-circle"></i> Guardar Materia Prima
+                </button>
+                <a href="{% url 'lista_materia_prima' %}" class="btn-cancel-wyk">
+                    <i class="fas fa-times"></i> Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/sweetalert2.all.min.js' %}"></script>
+<script>
+    const swalConfig = {
+        background: '#1a0a00',
+        color: '#fff',
+        confirmButtonColor: '#f5a623',
+        heightAuto: false
+    };
+
+    function confirmarRegistroMateria() {
+        const id = document.getElementById('id_id_materia').value;
+        const nombre = document.getElementById('id_nombre_materia').value;
+        const desc = document.getElementById('id_descripcion').value;
+
+        if (!id || !nombre || !desc) {
+            Swal.fire({
+                ...swalConfig,
+                icon: 'warning',
+                title: 'Campos incompletos',
+                text: 'Por favor, llena todos los campos, incluyendo la descripción.'
+            });
+            return;
+        }
+
+        Swal.fire({
+            ...swalConfig,
+            title: '¿Registrar Insumo?',
+            text: `Se añadirá "${nombre}" al inventario.`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, registrar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('formCrearMateria').submit();
+            }
+        });
+    }
+</script>
+{% endblock %}
