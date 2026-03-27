@@ -1,0 +1,341 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Inventario - WYK{% endblock %}
+
+{% block extra_css %}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/dashboard-tablas.css' %}">
+
+    <style>
+        .img-producto-tabla {
+            width: 45px;
+            height: 45px;
+            object-fit: cover;
+            border-radius: 10px;
+            border: 2px solid rgba(245, 166, 35, 0.3);
+            background-color: #2a1a10;
+        }
+
+        .text-info-secundaria {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.5);
+            display: block;
+        }
+
+        .filter-label-group {
+            display: block;
+            color: var(--primary-color);
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            margin-top: 15px;
+        }
+
+        /* Validación de SweetAlert con esquema WYK */
+        .swal2-validation-message {
+            background-color: transparent !important;
+            color: #ff8a8a !important;
+            font-weight: 600 !important;
+            border: none !important;
+            margin-top: 15px !important;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container-custom fade-in">
+    <div class="header">
+        <div class="greeting">
+            <div class="s">Gestión de <span class="n">Productos</span></div>
+            <div class="subtitle" style="opacity: 0.8; font-size: 0.85rem; color: white;">Control de existencias y catálogo de ventas</div>
+        </div>
+
+        <div class="d-flex align-items-center">
+            <div class="search-container me-3">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    <input type="text" id="inputBusqueda" class="form-control" placeholder="Buscar producto..." onkeyup="filtrarTodo()">
+                </div>
+            </div>
+
+            <button type="button" class="btn-filtro-header me-3" data-bs-toggle="modal" data-bs-target="#filtroInventarioModal">
+                <i class="fas fa-filter"></i> Filtros
+            </button>
+
+            <button type="button" class="btn-nuevo-header me-3" onclick="generarPDFGlobal('tablaProductos', 'Inventario de Productos', [0, 8])">
+                <i class="fas fa-file-pdf"></i> GENERAR PDF
+            </button>
+
+            <a href="{% url 'crear_producto' %}" class="btn-nuevo-header">+ Nuevo Producto</a>
+        </div>
+    </div>
+
+    <div class="card-wyk-table">
+        <div class="table-responsive">
+            <table class="table-wyk" id="tablaProductos">
+                <thead>
+                    <tr>
+                        <th class="text-center">ID</th>
+                        <th>PRODUCTO</th>
+                        <th class="text-end">PRECIO</th>
+                        <th class="text-center">STOCK</th>
+                        <th class="text-center">VENCIMIENTO</th>
+                        <th class="text-center">TIPO</th>
+                        <th>REGISTRADO POR</th>
+                        <th class="text-center">ESTADO</th>
+                        <th class="text-center">ACCIONES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in productos %}
+                    <tr data-tipo="{{ p.tipo_producto|lower }}" data-estado="{% if p.estado_producto %}activo{% else %}inactivo{% endif %}">
+                        <td class="text-center fw-bold" style="color: var(--primary-color);">{{ p.id_producto }}</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                {% if p.imagen_producto %}
+                                    <img src="{{ p.imagen_producto.url }}" class="img-producto-tabla me-2" alt="{{ p.nombre_producto }}">
+                                {% else %}
+                                    <img src="{% static 'images/default-product.png' %}" class="img-producto-tabla me-2" alt="Sin imagen">
+                                {% endif %}
+                                <div class="fw-bold text-white">{{ p.nombre_producto }}</div>
+                            </div>
+                        </td>
+                        <td class="text-end fw-bold" style="color: var(--primary-color); font-family: 'Courier New', Courier, monospace;">
+                            ${{ p.valor_unitario_product }}
+                        </td>
+                        <td class="text-center">
+                            <div class="fw-bold {% if p.cant_exist_producto < 5 %}text-danger{% else %}text-white{% endif %}">
+                                {{ p.cant_exist_producto }}
+                            </div>
+                            <span class="text-info-secundaria">unidades</span>
+                        </td>
+                        <td class="text-center text-white" style="font-size: 0.85rem;">
+                            {{ p.fecha_vencimiento_product|date:"d/m/Y" }}
+                        </td>
+                        <td class="text-center">
+                            <span class="badge-nivel">{{ p.get_tipo_producto_display }}</span>
+                        </td>
+                        <td>
+                            <div class="text-white" style="font-size: 0.85rem;">{{ p.id_usuario_fk_producto.nombre }}</div>
+                            <span class="text-info-secundaria">{{ p.id_usuario_fk_producto.rol_fk_usuario.rol }}</span>
+                        </td>
+                        <td class="text-center">
+                            <div class="switch-container">
+                                <div class="form-check form-switch p-0 m-0">
+                                    <input class="form-check-input" type="checkbox" role="switch"
+                                           id="switch{{ p.id_producto }}"
+                                           {% if p.estado_producto %}checked{% endif %}
+                                           onchange="ajaxCambiarEstadoProducto('{{ p.id_producto }}', this)">
+                                    <label class="form-check-label text-status-toggle {% if p.estado_producto %}text-active{% else %}text-inactive{% endif %}"
+                                           for="switch{{ p.id_producto }}" id="label{{ p.id_producto }}">
+                                        {% if p.estado_producto %}Activo{% else %}Inactivo{% endif %}
+                                    </label>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <a href="{% url 'editar_producto' p.id_producto %}" class="btn-action"><i class="fas fa-edit"></i></a>
+                            <button type="button" onclick="confirmarEliminarProducto('{{ p.id_producto }}', '{{ p.nombre_producto }}')" class="btn-action" style="color: #ff8a8a;">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center text-muted py-4">No hay productos registrados en el inventario.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="filtroInventarioModal" tabindex="-1">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content modal-content-wyk">
+            <div class="modal-header modal-header-wyk">
+                <h5 class="modal-title text-gold"><i class="fas fa-sliders-h"></i> Filtros de Inventario</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <span class="filter-label-group">Tipo de Producto:</span>
+                <div class="filter-container">
+                    <div class="chip active" data-group="tipo" data-filter="all">Todos</div>
+                    <div class="chip" data-group="tipo" data-filter="panaderia">Panadería</div>
+                    <div class="chip" data-group="tipo" data-filter="pasteleria">Pastelería</div>
+                    <div class="chip" data-group="tipo" data-filter="aseo">Aseo</div>
+                </div>
+
+                <hr style="border-color: rgba(255,255,255,0.1);">
+
+                <span class="filter-label-group">Estado Comercial:</span>
+                <div class="filter-container">
+                    <div class="chip active" data-group="estado" data-filter="all">Mostrar Todos</div>
+                    <div class="chip" data-group="estado" data-filter="activo">Activos</div>
+                    <div class="chip" data-group="estado" data-filter="inactivo">Inactivos</div>
+                </div>
+            </div>
+            <div class="modal-footer" style="border-top: none;">
+                <button type="button" class="btn btn-secondary w-100" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{% static 'js/reportes-pdf.js' %}"></script>
+<script src="{% static 'js/sweetalert2.all.min.js' %}"></script>
+
+<script>
+    const swalWykConfig = {
+        background: '#1a0a00',
+        color: '#fff',
+        confirmButtonColor: '#f5a623',
+        heightAuto: false,
+        allowOutsideClick: false
+    };
+
+    document.addEventListener('DOMContentLoaded', function() {
+        {% if messages %}
+            {% for message in messages %}
+                Swal.fire({
+                    ...swalWykConfig,
+                    icon: "{% if 'success' in message.tags %}success{% else %}error{% endif %}",
+                    title: "{% if 'success' in message.tags %}¡Operación Exitosa!{% else %}Atención{% endif %}",
+                    text: "{{ message|escapejs }}",
+                    confirmButtonText: 'Aceptar'
+                });
+            {% endfor %}
+        {% endif %}
+
+        // Inicializar eventos de chips
+        document.querySelectorAll('.chip').forEach(chip => {
+            chip.addEventListener('click', function() {
+                const group = this.getAttribute('data-group');
+                document.querySelectorAll(`.chip[data-group="${group}"]`).forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+                filtrarTodo();
+            });
+        });
+    });
+
+    function filtrarTodo() {
+        const busqueda = document.getElementById('inputBusqueda').value.toLowerCase();
+        const tipoActivo = document.querySelector('.chip[data-group="tipo"].active').getAttribute('data-filter');
+        const estadoActivo = document.querySelector('.chip[data-group="estado"].active').getAttribute('data-filter');
+        const rows = document.querySelectorAll('#tablaProductos tbody tr');
+
+        rows.forEach(row => {
+            const texto = row.innerText.toLowerCase();
+            const rowTipo = row.getAttribute('data-tipo');
+            const rowEstado = row.getAttribute('data-estado');
+
+            const coincideBusqueda = texto.includes(busqueda);
+            const coincideTipo = (tipoActivo === 'all' || rowTipo === tipoActivo);
+            const coincideEstado = (estadoActivo === 'all' || rowEstado === estadoActivo);
+
+            row.style.display = (coincideBusqueda && coincideTipo && coincideEstado) ? '' : 'none';
+        });
+    }
+
+    function ajaxCambiarEstadoProducto(id, element) {
+        const nuevoEstado = element.checked;
+        element.checked = !nuevoEstado;
+
+        Swal.fire({
+            ...swalWykConfig,
+            title: nuevoEstado ? '¿Activar Producto?' : '¿Inactivar Producto?',
+            text: "Se requiere confirmación administrativa. Ingrese su contraseña:",
+            icon: 'question',
+            input: 'password',
+            inputPlaceholder: 'Contraseña de administrador',
+            showCancelButton: true,
+            confirmButtonText: 'Confirmar',
+            cancelButtonText: 'Cancelar',
+            preConfirm: (password) => {
+                if (!password) { Swal.showValidationMessage('La contraseña es requerida'); return false; }
+                return fetch("{% url 'verificar_password_ajax' %}", {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `password=${encodeURIComponent(password)}`
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.valid) throw new Error('Contraseña incorrecta');
+                    return password;
+                })
+                .catch(error => { Swal.showValidationMessage(error.message); });
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch("{% url 'cambiar_estado_producto_ajax' %}", {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}', 'X-Requested-With': 'XMLHttpRequest' },
+                    body: JSON.stringify({ id_producto: id, nuevo_estado: nuevoEstado, password: result.value })
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        element.checked = nuevoEstado;
+                        const label = document.getElementById(`label${id}`);
+                        label.innerText = nuevoEstado ? 'Activo' : 'Inactivo';
+                        label.className = `form-check-label text-status-toggle ${nuevoEstado ? 'text-active' : 'text-inactive'}`;
+                        element.closest('tr').setAttribute('data-estado', nuevoEstado ? 'activo' : 'inactivo');
+                        Swal.fire({ ...swalWykConfig, icon: 'success', title: '¡Operación Exitosa!', text: data.message });
+                    } else {
+                        Swal.fire({ ...swalWykConfig, icon: 'error', title: 'Error', text: data.message });
+                    }
+                });
+            }
+        });
+    }
+
+    function confirmarEliminarProducto(id, nombre) {
+        Swal.fire({
+            ...swalWykConfig,
+            title: `¿Eliminar ${nombre}?`,
+            text: "Esta acción no se puede deshacer. Confirme su contraseña:",
+            icon: 'warning',
+            input: 'password',
+            inputPlaceholder: 'Contraseña de administrador',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar',
+            preConfirm: (password) => {
+                if (!password) { Swal.showValidationMessage('La contraseña es obligatoria'); return false; }
+                return fetch("{% url 'verificar_password_ajax' %}", {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `password=${encodeURIComponent(password)}`
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.valid) throw new Error('Contraseña incorrecta');
+                    return password;
+                })
+                .catch(error => { Swal.showValidationMessage(error.message); });
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = "{% url 'eliminar_producto' 0 %}".replace('0', id);
+                const csrf = document.createElement('input');
+                csrf.type = 'hidden'; csrf.name = 'csrfmiddlewaretoken'; csrf.value = '{{ csrf_token }}';
+                const pass = document.createElement('input');
+                pass.type = 'hidden'; pass.name = 'password_confirm'; pass.value = result.value;
+                form.appendChild(csrf); form.appendChild(pass);
+                document.body.appendChild(form); form.submit();
+            }
+        });
+    }
+</script>
+{% endblock %}

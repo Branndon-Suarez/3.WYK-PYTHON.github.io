@@ -24,3 +24,13 @@ db.sqlite3
 # Archivos de sistema
 .DS_Store
 Thumbs.db
+
+# --- Archivos Multimedia (Imágenes subidas) ---
+# Ignora la carpeta donde se guardan las fotos de productos
+media/
+
+# Opcional: Ignora formatos de imagen específicos si no usas la carpeta media
+*.jpg
+*.jpeg
+*.png
+*.webp

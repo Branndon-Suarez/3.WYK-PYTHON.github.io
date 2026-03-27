@@ -1,0 +1,235 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Editar Producto - WYK{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/dashboard-formularios.css' %}">
+    <style>
+        /* Contenedor de imagen estilizado para edición */
+        .image-edit-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 15px;
+            border: 1px solid rgba(245, 166, 35, 0.2);
+            height: 100%;
+        }
+
+        .img-edit-preview {
+            width: 130px;
+            height: 130px;
+            object-fit: cover;
+            border-radius: 12px;
+            border: 2px solid var(--primary-wyk);
+            box-shadow: 0 0 15px rgba(245, 166, 35, 0.2);
+        }
+
+        .info-edit {
+            color: rgba(255,255,255,0.6);
+            font-size: 0.8rem;
+            margin-top: 5px;
+            text-align: center;
+        }
+
+        .text-gold { color: var(--primary-wyk) !important; }
+
+        /* Botón de carga sutil */
+        .btn-update-file {
+            display: inline-block;
+            padding: 8px 12px;
+            background: rgba(245, 166, 35, 0.1);
+            border: 1px solid var(--primary-wyk);
+            color: var(--primary-wyk);
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.3s;
+            text-transform: uppercase;
+        }
+
+        .btn-update-file:hover {
+            background: var(--primary-wyk);
+            color: #1a0a00;
+        }
+
+        .input-file-hidden {
+            width: 0.1px;
+            height: 0.1px;
+            opacity: 0;
+            overflow: hidden;
+            position: absolute;
+            z-index: -1;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="main-form-wrapper fade-in">
+    <div class="form-header-wyk">
+        <h2>Actualizar Producto</h2>
+        <p>Modificando información de: <strong class="text-gold">{{ producto.nombre_producto }}</strong></p>
+    </div>
+
+    <div class="form-container-wyk">
+        <form method="post" id="formEditarProducto" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <input type="hidden" name="id_producto" value="{{ producto.id_producto }}">
+            <input type="hidden" name="estado_producto" value="{{ producto.estado_producto }}">
+
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="form-group-wyk">
+                        <label class="form-label-wyk">ID del Producto</label>
+                        <input type="text" class="input-wyk"
+                               value="{{ producto.id_producto }}" readonly style="opacity: 0.7; cursor: not-allowed;">
+                        <p class="info-edit" style="text-align: left;"><i class="fas fa-lock"></i> El código único del producto no es modificable.</p>
+                    </div>
+
+                    <div class="form-group-wyk">
+                        <label class="form-label-wyk">Nombre del Producto</label>
+                        <input type="text" name="nombre_producto" id="id_nombre_producto" class="input-wyk"
+                               value="{{ form.nombre_producto.value|default:producto.nombre_producto }}" required>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group-wyk">
+                                <label class="form-label-wyk">Valor Unitario ($)</label>
+                                <input type="number" name="valor_unitario_product" id="id_valor_unitario" class="input-wyk"
+                                       value="{{ form.valor_unitario_product.value|default:producto.valor_unitario_product }}" step="0.01" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group-wyk">
+                                <label class="form-label-wyk">Stock Actual</label>
+                                <input type="number" name="cant_exist_producto" id="id_cant_exist" class="input-wyk"
+                                       value="{{ form.cant_exist_producto.value|default:producto.cant_exist_producto }}" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group-wyk">
+                                <label class="form-label-wyk">Fecha de Vencimiento</label>
+                                <input type="date" name="fecha_vencimiento_product" id="id_fecha_vencimiento" class="input-wyk"
+                                       value="{{ producto.fecha_vencimiento_product|date:'Y-m-d' }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group-wyk">
+                                <label class="form-label-wyk">Tipo de Producto</label>
+                                <select name="tipo_producto" id="id_tipo_producto" class="input-wyk" required>
+                                    {% for val, label in form.fields.tipo_producto.choices %}
+                                        <option value="{{ val }}" {% if form.tipo_producto.value == val or producto.tipo_producto == val %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="image-edit-wrapper">
+                        <label class="form-label-wyk text-center">Imagen Actual</label>
+                        {% if producto.imagen_producto %}
+                            <img src="{{ producto.imagen_producto.url }}" id="imgPreview" class="img-edit-preview" alt="Producto">
+                        {% else %}
+                            <img src="{% static 'images/default-product.png' %}" id="imgPreview" class="img-edit-preview" alt="Default">
+                        {% endif %}
+
+                        <div class="mt-2 text-center">
+                            <input type="file" name="imagen_producto" id="id_imagen_producto" class="input-file-hidden" accept="image/*" onchange="handleImagePreview(this)">
+                            <label for="id_imagen_producto" class="btn-update-file">
+                                <i class="fas fa-sync-alt me-1"></i> Cambiar Foto
+                            </label>
+                            <p class="info-edit">Formatos: JPG, PNG o WEBP.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions-wyk mt-4">
+                <button type="button" onclick="confirmarActualizacion()" class="btn-save-wyk">
+                    <i class="fas fa-sync-alt"></i> Aplicar Cambios
+                </button>
+                <a href="{% url 'lista_productos' %}" class="btn-cancel-wyk">
+                    <i class="fas fa-times"></i> Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/sweetalert2.all.min.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const swalConfig = {
+        background: '#1a0a00',
+        color: '#fff',
+        confirmButtonColor: '#f5a623',
+        heightAuto: false,
+        scrollbarPadding: false
+    };
+
+    {% if messages %}
+        {% for message in messages %}
+            Swal.fire({
+                ...swalConfig,
+                icon: "{% if 'success' in message.tags %}success{% else %}error{% endif %}",
+                title: "{% if 'success' in message.tags %}¡Listo!{% else %}¡Atención!{% endif %}",
+                text: "{{ message|escapejs }}"
+            });
+        {% endfor %}
+    {% endif %}
+
+    function handleImagePreview(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('imgPreview').src = e.target.result;
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function confirmarActualizacion() {
+        const nombre = document.getElementById('id_nombre_producto').value.trim();
+        const precio = document.getElementById('id_valor_unitario').value;
+        const stock = document.getElementById('id_cant_exist').value;
+
+        if (!nombre || !precio || !stock) {
+            Swal.fire({
+                ...swalConfig,
+                icon: 'warning',
+                title: 'Campos incompletos',
+                text: 'Por favor, asegúrese de llenar los campos obligatorios del producto.'
+            });
+            return;
+        }
+
+        Swal.fire({
+            ...swalConfig,
+            title: '¿Guardar cambios?',
+            text: `Se actualizará la información de "${nombre}" en el inventario.`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, aplicar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('formEditarProducto').submit();
+            }
+        });
+    }
+</script>
+{% endblock %}

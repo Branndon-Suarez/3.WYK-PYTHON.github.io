@@ -1,0 +1,254 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Nuevo Producto - WYK{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/dashboard-formularios.css' %}">
+    <style>
+        /* Contenedor de imagen más compacto y alineado */
+        .image-upload-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 15px;
+            border: 1px dashed rgba(245, 166, 35, 0.3);
+            height: 100%;
+            min-height: 220px;
+        }
+
+        /* Tamaño reducido para coincidir con la escala de los inputs */
+        .img-preview-custom, .img-placeholder {
+            width: 120px;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 12px;
+            border: 2px solid var(--primary-wyk);
+        }
+
+        .img-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.2);
+            border: 2px solid rgba(245, 166, 35, 0.1);
+            color: rgba(255,255,255,0.2);
+        }
+
+        .img-preview-custom {
+            display: none; /* Se muestra por JS */
+        }
+
+        /* --- BOTÓN DE SELECCIONAR ARCHIVO --- */
+        .input-file-hidden {
+            width: 0.1px;
+            height: 0.1px;
+            opacity: 0;
+            overflow: hidden;
+            position: absolute;
+            z-index: -1;
+        }
+
+        .btn-custom-file {
+            display: inline-block;
+            padding: 8px 15px;
+            background-color: transparent;
+            border: 2px solid var(--primary-wyk);
+            color: var(--primary-wyk);
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-custom-file:hover {
+            background-color: var(--primary-wyk);
+            color: #1a0a00;
+            box-shadow: 0 0 10px rgba(245, 166, 35, 0.4);
+        }
+
+        .file-name-info {
+            color: rgba(255,255,255,0.5);
+            font-size: 0.7rem;
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            text-align: center;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="main-form-wrapper fade-in">
+    <div class="form-header-wyk">
+        <h2>Registrar Nuevo Producto</h2>
+        <p>Completa los detalles para añadir un artículo al catálogo de inventario.</p>
+    </div>
+
+    <div class="form-container-wyk">
+        <form method="post" id="formCrearProducto" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <input type="hidden" name="estado_producto" value="True">
+
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="row">
+                        <div class="form-group-wyk col-md-4">
+                            <label class="form-label-wyk">Código / ID</label>
+                            <input type="text" name="id_producto" id="id_id_producto" class="input-wyk"
+                                   placeholder="Ej: PRD-001" value="{{ request.POST.id_producto|default:'' }}" required>
+                        </div>
+
+                        <div class="form-group-wyk col-md-8">
+                            <label class="form-label-wyk">Nombre del Producto</label>
+                            <input type="text" name="nombre_producto" id="id_nombre_producto" class="input-wyk"
+                                   placeholder="Nombre descriptivo" value="{{ request.POST.nombre_producto|default:'' }}" required>
+                        </div>
+
+                        <div class="form-group-wyk col-md-6">
+                            <label class="form-label-wyk">Precio Unitario ($)</label>
+                            <input type="number" name="valor_unitario_product" id="id_precio" class="input-wyk"
+                                   placeholder="0.00" step="0.01" value="{{ request.POST.valor_unitario_product|default:'' }}" required>
+                        </div>
+
+                        <div class="form-group-wyk col-md-6">
+                            <label class="form-label-wyk">Cantidad Inicial (Stock)</label>
+                            <input type="number" name="cant_exist_producto" id="id_stock" class="input-wyk"
+                                   placeholder="0" value="{{ request.POST.cant_exist_producto|default:'' }}" required>
+                        </div>
+
+                        <div class="form-group-wyk col-md-6">
+                            <label class="form-label-wyk">Categoría / Tipo</label>
+                            <select name="tipo_producto" id="id_tipo" class="input-wyk select-wyk" style="background-color: #1a0a00;" required>
+                                <option value="" disabled {% if not request.POST.tipo_producto %}selected{% endif %}>Selecciona un tipo...</option>
+                                <option value="PANADERIA" {% if request.POST.tipo_producto == 'PANADERIA' %}selected{% endif %}>Panadería</option>
+                                <option value="PASTELERIA" {% if request.POST.tipo_producto == 'PASTELERIA' %}selected{% endif %}>Pastelería</option>
+                                <option value="ASEO" {% if request.POST.tipo_producto == 'ASEO' %}selected{% endif %}>Aseo</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group-wyk col-md-6">
+                            <label class="form-label-wyk">Fecha de Vencimiento</label>
+                            <input type="date" name="fecha_vencimiento_product" id="id_fecha_venc" class="input-wyk" value="{{ request.POST.fecha_vencimiento_product|default:'' }}" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="image-upload-wrapper">
+                        <label class="form-label-wyk text-center">Imagen del Producto</label>
+                        <div id="placeholder" class="img-placeholder">
+                            <i class="fas fa-camera fa-2x"></i>
+                        </div>
+                        <img id="preview" src="#" alt="Vista previa" class="img-preview-custom">
+
+                        <span id="fileName" class="file-name-info">Ningún archivo seleccionado</span>
+
+                        <input type="file" name="imagen_producto" id="id_imagen" class="input-file-hidden" accept="image/*" onchange="previewImage(this)">
+
+                        <label for="id_imagen" class="btn-custom-file">
+                            <i class="fas fa-upload me-2"></i> SELECCIONAR IMAGEN
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions-wyk mt-4">
+                <button type="button" onclick="confirmarRegistroProducto()" class="btn-save-wyk">
+                    <i class="fas fa-check-circle"></i> Guardar Producto
+                </button>
+                <a href="{% url 'lista_productos' %}" class="btn-cancel-wyk">
+                    <i class="fas fa-times"></i> Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/sweetalert2.all.min.js' %}"></script>
+<script>
+    const swalConfig = {
+        background: '#1a0a00',
+        color: '#fff',
+        confirmButtonColor: '#f5a623',
+        heightAuto: false
+    };
+
+    document.addEventListener('DOMContentLoaded', function() {
+        {% if messages %}
+            {% for message in messages %}
+                Swal.fire({
+                    ...swalConfig,
+                    icon: "{% if 'success' in message.tags %}success{% else %}error{% endif %}",
+                    title: "{% if 'success' in message.tags %}Listo{% else %}Atención{% endif %}",
+                    text: "{{ message|escapejs }}",
+                });
+            {% endfor %}
+        {% endif %}
+    });
+
+    function previewImage(input) {
+        const preview = document.getElementById('preview');
+        const placeholder = document.getElementById('placeholder');
+        const fileNameDisplay = document.getElementById('fileName');
+
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            fileNameDisplay.textContent = input.files[0].name;
+            fileNameDisplay.style.color = "#f5a623";
+
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                placeholder.style.display = 'none';
+            }
+            reader.readAsDataURL(input.files[0]);
+        } else {
+            fileNameDisplay.textContent = "Ningún archivo seleccionado";
+            fileNameDisplay.style.color = "rgba(255,255,255,0.5)";
+        }
+    }
+
+    function confirmarRegistroProducto() {
+        const id = document.getElementById('id_id_producto').value.trim();
+        const nombre = document.getElementById('id_nombre_producto').value.trim();
+        const precio = document.getElementById('id_precio').value;
+        const tipo = document.getElementById('id_tipo').value;
+
+        if (!id || !nombre || !precio || !tipo) {
+            Swal.fire({
+                ...swalConfig,
+                icon: 'warning',
+                title: 'Campos incompletos',
+                text: 'Por favor, llena los campos obligatorios para el producto.'
+            });
+            return;
+        }
+
+        Swal.fire({
+            ...swalConfig,
+            title: '¿Registrar Producto?',
+            text: `Se añadirá "${nombre}" al catálogo de inventario.`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, registrar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('formCrearProducto').submit();
+            }
+        });
+    }
+</script>
+{% endblock %}
