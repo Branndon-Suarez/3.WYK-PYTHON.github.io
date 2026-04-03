@@ -16,7 +16,7 @@ class Produccion(models.Model):
     # BIGSERIAL en Postgres -> BigAutoField en Django
     id_produccion = models.BigAutoField(primary_key=True, db_column='id_produccion')
     nombre_produccion = models.CharField(max_length=50, db_column='nombre_produccion')
-    cant_produccion = models.CharField(max_length=50, db_column='categoria_produccion')
+    categoria_produccion = models.CharField(max_length=50, db_column='categoria_produccion')
     cant_produccion = models.BigIntegerField(db_column='cant_produccion')
     descripcion_produccion = models.CharField(max_length=200, db_column='descripcion_produccion')
 
@@ -68,11 +68,11 @@ class DetalleProduccion(models.Model):
         db_column='id_materia_prima_fk_det_produc'
     )
 
-    # DECIMAL(10,2) en Postgres -> DecimalField en Django
-    # Importante: max_digits es el total de números y decimal_places los que van tras la coma.
+    # CAMBIO A 3 DECIMALES: Para que coincida con DECIMAL(10,3) de tu SQL
+    # (Permite usar gramos exactos en las recetas)
     cantidad_requerida = models.DecimalField(
         max_digits=10,
-        decimal_places=2,
+        decimal_places=3,
         db_column='cantidad_requerida'
     )
 

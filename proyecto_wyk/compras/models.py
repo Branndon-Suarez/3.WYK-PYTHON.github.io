@@ -55,7 +55,10 @@ class Compra(models.Model):
 # ---------------------------------MODELO COMPRA MATERIA PRIMA---------------------------------
 class DetalleCompraMateriaPrima(models.Model):
     id_det_compra_mat_prim = models.AutoField(primary_key=True, db_column='id_det_compra_mat_prim')
-    cantidad_mat_prima_comprada = models.BigIntegerField(db_column='cantidad_mat_prima_comprada')
+
+    # CAMBIO A DECIMAL(10,3): Para registrar compras de por ejemplo 1.5 kg de canela
+    cantidad_mat_prima_comprada = models.DecimalField(max_digits=10, decimal_places=3, db_column='cantidad_mat_prima_comprada')
+
     sub_total_mat_prima_comprada = models.BigIntegerField(db_column='sub_total_mat_prima_comprada')
 
     id_compra_fk_det_compra_mat_prima = models.ForeignKey(

@@ -1,7 +1,7 @@
 from django.db import models
 
 # Create your models here.
-"""CONTROL DE INVENTARIOS (MATERIA_PRTIMA, PRODUCTO, AJUSTE_INVENTARIO_MATERIA_PRIMA, AJUSTE_INVENTARIO_PRODUCTO)."""
+"""CONTROL DE INVENTARIOS (MATERIA_PRIMA, PRODUCTO, AJUSTE_INVENTARIO_MATERIA_PRIMA, AJUSTE_INVENTARIO_PRODUCTO)."""
 
 
 # ---------------------------------MODELO PRODUCTO---------------------------------
@@ -41,12 +41,28 @@ class Producto(models.Model):
 
 # ---------------------------------MODELO MATERIA PRIMA---------------------------------
 class MateriaPrima(models.Model):
+    # Mapeo del CREATE TYPE presentacion_mat
+    class PresentacionMat(models.TextChoices):
+        KG = 'KG', 'Kilogramos'
+        LT = 'LT', 'Litros'
+        UN = 'UN', 'Unidades'
+
     id_materia_prima = models.BigAutoField(primary_key=True, db_column='id_materia_prima')
     nombre_materia_prima = models.CharField(max_length=50, db_column='nombre_materia_prima')
-    valor_unitario_mat_prima = models.BigIntegerField(db_column='valor_unitario_mat_prima')
+
+    # Se eliminó de tu último SQL pero se mantiene si lo necesitas en el modelo
+    # valor_unitario_mat_prima = models.BigIntegerField(db_column='valor_unitario_mat_prima')
+
     fecha_vencimiento_mat_prima = models.DateField(db_column='fecha_vencimiento_materia_prima')
-    cantidad_exist_mat_prima = models.BigIntegerField(db_column='cantidad_exist_materia_prima')
-    presentacion_mat_prima = models.CharField(max_length=50, db_column='presentacion_materia_prima')
+
+    # CAMBIO A DECIMAL(10,3) para Gramos y Mililitros
+    cantidad_exist_mat_prima = models.DecimalField(max_digits=10, decimal_places=3,
+                                                   db_column='cantidad_exist_materia_prima')
+
+    # CAMBIO A CHOICES PARA ENUM
+    presentacion_mat_prima = models.CharField(max_length=20, choices=PresentacionMat.choices,
+                                              db_column='presentacion_materia_prima')
+
     descripcion_mat_prima = models.CharField(max_length=200, db_column='descripcion_materia_prima')
 
     # Llave foranea con otra app
@@ -94,32 +110,32 @@ class AjusteInventario(models.Model):
 # ---------------------------------MODELO AJUSTE INVENTARIO MATERIA PRIMA---------------------------------
 class AjusteIventarioMatPrima(models.Model):
     class TipoAjustMat(models.TextChoices):
-        DANADO = 'DAÑADO', 'Dañado'  # Revisa si en SQL es DAÑADO o DANADO
+        DANADO = 'DAÑADO', 'Dañado'
         ROBO = 'ROBO', 'Robo'
-        PERDIDA = 'PERDIDA', 'Perdida'
+        PERDIDA = 'PERDIDA', 'Pérdida'
         CADUCADO = 'CADUCADO', 'Caducado'
-        # Nota: En tu SQL tipo_ajuste_mat no tenía 'MUESTRA', solo los 4 de arriba.
-        # Si lo agregaste al SQL, déjalo. Si no, quítalo de aquí.
 
     # 1. Cambiado a AutoField y primary_key=True
     id_ajust_mat = models.AutoField(primary_key=True, db_column='id_ajus_mat')
 
     fecha_ajust_mat = models.DateTimeField(db_column='fecha_ajus_mat')
     tipo_ajust_mat = models.CharField(max_length=20, choices=TipoAjustMat.choices, db_column='tipo_ajus_mat')
-    cantidad_ajustada_mat = models.IntegerField(db_column='cantidad_ajustada_mat')
+
+    # CAMBIO A DECIMAL(10,3) para ajustes de gramos
+    cantidad_ajustada_mat = models.DecimalField(max_digits=10, decimal_places=3, db_column='cantidad_ajustada_mat')
 
     id_mat_fk_ajuste_mat = models.ForeignKey(
         MateriaPrima,
         on_delete=models.PROTECT,
-        db_column='id_mat_fk_ajuste_mat'  # Quité el espacio final si lo tenía
+        db_column='id_mat_fk_ajuste_mat'
     )
 
     id_usuario_fk_ajuste_mat = models.ForeignKey(
         'usuarios.Usuario',
         on_delete=models.PROTECT,
-        db_column='id_usuario_fk_ajuste_mat'  # Quité el espacio final
+        db_column='id_usuario_fk_ajuste_mat'
     )
 
     class Meta:
         managed = False
-        db_table = 'ajuste_materia_prima'  # Quité el espacio final
+        db_table = 'ajuste_materia_prima'
