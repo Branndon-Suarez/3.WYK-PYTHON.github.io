@@ -25,6 +25,9 @@ class Producto(models.Model):
     # Campo con ENUM
     tipo_producto = models.CharField(max_length=20, choices=TipoProducto.choices, db_column='tipo_producto')
 
+    # NUEVO CAMPO DESCRIPCIÓN (Agregado para coincidir con SQL)
+    descripcion_producto = models.CharField(max_length=200, null=True, blank=True, db_column='descripcion_producto')
+
     # Llave foranea con con otra app
     id_usuario_fk_producto = models.ForeignKey('usuarios.Usuario', on_delete=models.PROTECT,
                                                db_column='id_usuario_fk_producto')
@@ -50,9 +53,6 @@ class MateriaPrima(models.Model):
     id_materia_prima = models.BigAutoField(primary_key=True, db_column='id_materia_prima')
     nombre_materia_prima = models.CharField(max_length=50, db_column='nombre_materia_prima')
 
-    # Se eliminó de tu último SQL pero se mantiene si lo necesitas en el modelo
-    # valor_unitario_mat_prima = models.BigIntegerField(db_column='valor_unitario_mat_prima')
-
     fecha_vencimiento_mat_prima = models.DateField(db_column='fecha_vencimiento_materia_prima')
 
     # CAMBIO A DECIMAL(10,3) para Gramos y Mililitros
@@ -63,7 +63,8 @@ class MateriaPrima(models.Model):
     presentacion_mat_prima = models.CharField(max_length=20, choices=PresentacionMat.choices,
                                               db_column='presentacion_materia_prima')
 
-    descripcion_mat_prima = models.CharField(max_length=200, db_column='descripcion_materia_prima')
+    # Ajustado a null=True, blank=True para coincidir con el SQL (opcional)
+    descripcion_mat_prima = models.CharField(max_length=200, null=True, blank=True, db_column='descripcion_materia_prima')
 
     # Llave foranea con otra app
     id_usuario_fk_mat_prima = models.ForeignKey('usuarios.Usuario', on_delete=models.PROTECT,

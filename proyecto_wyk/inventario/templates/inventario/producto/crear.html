@@ -83,6 +83,12 @@
             white-space: nowrap;
             text-align: center;
         }
+
+        /* Estilo para el área de descripción */
+        .textarea-wyk {
+            min-height: 80px;
+            resize: none;
+        }
     </style>
 {% endblock %}
 
@@ -139,6 +145,12 @@
                         <div class="form-group-wyk col-md-6">
                             <label class="form-label-wyk">Fecha de Vencimiento</label>
                             <input type="date" name="fecha_vencimiento_product" id="id_fecha_venc" class="input-wyk" value="{{ request.POST.fecha_vencimiento_product|default:'' }}" required>
+                        </div>
+
+                        <div class="form-group-wyk col-md-12">
+                            <label class="form-label-wyk">Descripción del Producto (Opcional)</label>
+                            <textarea name="descripcion_producto" id="id_descripcion" class="input-wyk textarea-wyk"
+                                      placeholder="Breve detalle del producto...">{{ request.POST.descripcion_producto|default:'' }}</textarea>
                         </div>
                     </div>
                 </div>
@@ -226,12 +238,13 @@
         const precio = document.getElementById('id_precio').value;
         const tipo = document.getElementById('id_tipo').value;
 
+        // Validación de campos obligatorios (excluyendo descripción)
         if (!id || !nombre || !precio || !tipo) {
             Swal.fire({
                 ...swalConfig,
                 icon: 'warning',
                 title: 'Campos incompletos',
-                text: 'Por favor, llena los campos obligatorios para el producto.'
+                text: 'Por favor, llena los campos obligatorios del producto.'
             });
             return;
         }

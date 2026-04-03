@@ -23,6 +23,20 @@
             display: block;
         }
 
+        /* Estilo para la descripción en la tabla con Tooltip */
+        .desc-producto-tabla {
+            font-size: 0.7rem;
+            color: var(--primary-color);
+            opacity: 0.8;
+            display: block;
+            max-width: 180px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-style: italic;
+            cursor: help; /* Indica que hay más información al pasar el mouse */
+        }
+
         .filter-label-group {
             display: block;
             color: var(--primary-color);
@@ -100,7 +114,14 @@
                                 {% else %}
                                     <img src="{% static 'images/default-product.png' %}" class="img-producto-tabla me-2" alt="Sin imagen">
                                 {% endif %}
-                                <div class="fw-bold text-white">{{ p.nombre_producto }}</div>
+                                <div>
+                                    <div class="fw-bold text-white">{{ p.nombre_producto }}</div>
+                                    {% if p.descripcion_producto %}
+                                        <span class="desc-producto-tabla" title="{{ p.descripcion_producto }}">
+                                            {{ p.descripcion_producto }}
+                                        </span>
+                                    {% endif %}
+                                </div>
                             </div>
                         </td>
                         <td class="text-end fw-bold" style="color: var(--primary-color); font-family: 'Courier New', Courier, monospace;">

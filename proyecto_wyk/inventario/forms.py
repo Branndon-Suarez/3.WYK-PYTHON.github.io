@@ -1,11 +1,15 @@
 from django import forms
 from .models import Producto, MateriaPrima, AjusteInventario, AjusteIventarioMatPrima
 
+
 class ProductoForm(forms.ModelForm):
     class Meta:
         model = Producto
+        # SE AGREGA 'descripcion_producto' A LA LISTA
         fields = ['id_producto', 'nombre_producto', 'imagen_producto', 'valor_unitario_product',
-                  'cant_exist_producto', 'fecha_vencimiento_product', 'tipo_producto', 'estado_producto']
+                  'cant_exist_producto', 'fecha_vencimiento_product', 'tipo_producto',
+                  'descripcion_producto', 'estado_producto']
+
         widgets = {
             'id_producto': forms.NumberInput(attrs={'class': 'form-control'}),
             'nombre_producto': forms.TextInput(attrs={'class': 'form-control'}),
@@ -14,8 +18,12 @@ class ProductoForm(forms.ModelForm):
             'cant_exist_producto': forms.NumberInput(attrs={'class': 'form-control'}),
             'fecha_vencimiento_product': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'tipo_producto': forms.Select(attrs={'class': 'form-control'}),
+            # WIDGET PARA LA DESCRIPCIÓN DEL PRODUCTO
+            'descripcion_producto': forms.Textarea(
+                attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Ej: Notas de sabor o alérgenos...'}),
             'estado_producto': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
+
         # Personalización de mensajes de error para campos únicos
         error_messages = {
             'id_producto': {
@@ -28,6 +36,7 @@ class ProductoForm(forms.ModelForm):
         if Producto.objects.filter(nombre_producto=nombre).exclude(pk=self.instance.pk).exists():
             raise forms.ValidationError(f"El producto '{nombre}' ya existe.")
         return nombre
+
 
 class MateriaPrimaForm(forms.ModelForm):
     class Meta:

@@ -14,6 +14,20 @@
             display: block;
         }
 
+        /* Estilo unificado para descripciones con Tooltip */
+        .desc-item-tabla {
+            font-size: 0.7rem;
+            color: var(--primary-color);
+            opacity: 0.8;
+            display: block;
+            max-width: 200px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-style: italic;
+            cursor: help; /* Indica que hay más información */
+        }
+
         .filter-label-group {
             display: block;
             color: var(--primary-color);
@@ -91,7 +105,11 @@
                         <td class="text-center fw-bold" style="color: var(--primary-color);">{{ m.id_materia_prima }}</td>
                         <td>
                             <div class="fw-bold text-white">{{ m.nombre_materia_prima }}</div>
-                            <span class="text-info-secundaria">{{ m.descripcion_mat_prima }}</span>
+                            {% if m.descripcion_mat_prima %}
+                                <span class="desc-item-tabla" title="{{ m.descripcion_mat_prima }}">
+                                    {{ m.descripcion_mat_prima }}
+                                </span>
+                            {% endif %}
                         </td>
                         <td class="text-center text-white-50" style="font-size: 0.85rem;">
                             {{ m.get_presentacion_mat_prima_display }}
