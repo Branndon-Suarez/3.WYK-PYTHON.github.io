@@ -34,24 +34,22 @@
                 </div>
 
                 <div class="form-group-wyk col-md-4">
-                    <label class="form-label-wyk">Valor Unitario ($)</label>
-                    <input type="number" name="valor_unitario_mat_prima" id="id_valor_mat" class="input-wyk"
-                           placeholder="0.00" step="0.01" value="{{ request.POST.valor_unitario_mat_prima|default:'' }}" required>
+                    <label class="form-label-wyk">Presentación (Unidad de medida)</label>
+                    <select name="presentacion_mat_prima" id="id_presentacion" class="input-wyk" required>
+                        <option value="" disabled selected>Seleccione...</option>
+                        <option value="KG">Kilogramos (KG)</option>
+                        <option value="LT">Litros (LT)</option>
+                        <option value="UN">Unidades (UN)</option>
+                    </select>
                 </div>
 
                 <div class="form-group-wyk col-md-4">
-                    <label class="form-label-wyk">Cantidad Inicial</label>
+                    <label class="form-label-wyk">Cantidad Inicial (Existencias)</label>
                     <input type="number" name="cantidad_exist_mat_prima" id="id_stock_mat" class="input-wyk"
-                           placeholder="0" value="{{ request.POST.cantidad_exist_mat_prima|default:'' }}" required>
+                           placeholder="0.000" step="0.001" value="{{ request.POST.cantidad_exist_mat_prima|default:'' }}" required>
                 </div>
 
                 <div class="form-group-wyk col-md-4">
-                    <label class="form-label-wyk">Presentación</label>
-                    <input type="text" name="presentacion_mat_prima" id="id_presentacion" class="input-wyk"
-                           placeholder="Ej: Bulto 50kg" value="{{ request.POST.presentacion_mat_prima|default:'' }}" required>
-                </div>
-
-                <div class="form-group-wyk col-md-6">
                     <label class="form-label-wyk">Fecha de Vencimiento</label>
                     <input type="date" name="fecha_vencimiento_mat_prima" id="id_fecha_venc_mat" class="input-wyk"
                            value="{{ request.POST.fecha_vencimiento_mat_prima|default:'' }}" required>
@@ -60,7 +58,7 @@
                 <div class="form-group-wyk col-md-12">
                     <label class="form-label-wyk">Descripción del Insumo</label>
                     <textarea name="descripcion_mat_prima" id="id_descripcion" class="input-wyk" rows="2"
-                              placeholder="Detalles adicionales sobre el insumo..." required>{{ request.POST.descripcion_mat_prima|default:'' }}</textarea>
+                              placeholder="Detalles adicionales sobre el insumo (marca, proveedor, etc.)..." required>{{ request.POST.descripcion_mat_prima|default:'' }}</textarea>
                 </div>
             </div>
 
@@ -90,14 +88,16 @@
     function confirmarRegistroMateria() {
         const id = document.getElementById('id_id_materia').value;
         const nombre = document.getElementById('id_nombre_materia').value;
-        const desc = document.getElementById('id_descripcion').value;
+        const presentacion = document.getElementById('id_presentacion').value;
+        const stock = document.getElementById('id_stock_mat').value;
 
-        if (!id || !nombre || !desc) {
+        // Validación básica antes del SweetAlert
+        if (!id || !nombre || !presentacion || !stock) {
             Swal.fire({
                 ...swalConfig,
                 icon: 'warning',
                 title: 'Campos incompletos',
-                text: 'Por favor, llena todos los campos, incluyendo la descripción.'
+                text: 'Por favor, llena los campos obligatorios para registrar el insumo.'
             });
             return;
         }
@@ -105,7 +105,7 @@
         Swal.fire({
             ...swalConfig,
             title: '¿Registrar Insumo?',
-            text: `Se añadirá "${nombre}" al inventario.`,
+            text: `Se añadirá "${nombre.toUpperCase()}" al inventario de materias primas.`,
             icon: 'question',
             showCancelButton: true,
             confirmButtonText: 'Sí, registrar',

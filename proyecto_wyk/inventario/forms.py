@@ -34,12 +34,15 @@ class MateriaPrimaForm(forms.ModelForm):
         model = MateriaPrima
         exclude = ['id_usuario_fk_mat_prima']
         widgets = {
-            'id_materia_prima': forms.NumberInput(attrs={'class': 'form-control'}),
+            # Ocultamos el ID si es autoincremental en DB, o lo dejamos si lo digitas manualmente
+            'id_materia_prima': forms.NumberInput(attrs={'class': 'form-control', 'readonly': 'readonly'}),
             'nombre_materia_prima': forms.TextInput(attrs={'class': 'form-control'}),
-            'valor_unitario_mat_prima': forms.NumberInput(attrs={'class': 'form-control'}),
             'fecha_vencimiento_mat_prima': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'cantidad_exist_mat_prima': forms.NumberInput(attrs={'class': 'form-control'}),
-            'presentacion_mat_prima': forms.TextInput(attrs={'class': 'form-control'}),
+            # step="0.001" permite que el navegador acepte los 3 decimales (gramos/mililitros)
+            'cantidad_exist_mat_prima': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.001'}),
+            # Cambiado a Select para usar las opciones KG, LT, UN definidas en tu modelo
+            'presentacion_mat_prima': forms.Select(attrs={'class': 'form-control'}),
+            'descripcion_mat_prima': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
             'estado_materia_prima': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
         # Personalización de mensajes de error para campos únicos
@@ -50,6 +53,7 @@ class MateriaPrimaForm(forms.ModelForm):
         }
 
     def clean_nombre_materia_prima(self):
+        # Aseguramos que el nombre llegue siempre en Mayúsculas para evitar duplicados
         nombre = self.cleaned_data.get('nombre_materia_prima').strip().upper()
         if MateriaPrima.objects.filter(nombre_materia_prima=nombre).exclude(pk=self.instance.pk).exists():
             raise forms.ValidationError(f"La materia prima '{nombre}' ya existe.")

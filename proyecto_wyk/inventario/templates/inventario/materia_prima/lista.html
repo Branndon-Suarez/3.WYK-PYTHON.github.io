@@ -32,6 +32,12 @@
             border: none !important;
             margin-top: 15px !important;
         }
+
+        /* Estilo para stock bajo */
+        .text-danger-wyk {
+            color: #ff8a8a !important;
+            text-shadow: 0 0 5px rgba(255, 138, 138, 0.3);
+        }
     </style>
 {% endblock %}
 
@@ -71,7 +77,6 @@
                         <th class="text-center">ID</th>
                         <th>INSUMO</th>
                         <th class="text-center">PRESENTACIÓN</th>
-                        <th class="text-end">V. UNITARIO</th>
                         <th class="text-center">EXISTENCIAS</th>
                         <th class="text-center">VENCIMIENTO</th>
                         <th>REGISTRADO POR</th>
@@ -81,23 +86,21 @@
                 </thead>
                 <tbody>
                     {% for m in materias %}
-                    <tr data-estado="{% if m.estado_materia_prima %}activo{% else %}inactivo{% endif %}">
+                    <tr data-estado="{% if m.estado_materia_prima %}activo{% else %}inactivo{% endif %}"
+                        data-presentacion="{{ m.presentacion_mat_prima }}">
                         <td class="text-center fw-bold" style="color: var(--primary-color);">{{ m.id_materia_prima }}</td>
                         <td>
                             <div class="fw-bold text-white">{{ m.nombre_materia_prima }}</div>
                             <span class="text-info-secundaria">{{ m.descripcion_mat_prima }}</span>
                         </td>
                         <td class="text-center text-white-50" style="font-size: 0.85rem;">
-                            {{ m.presentacion_mat_prima }}
-                        </td>
-                        <td class="text-end fw-bold" style="color: var(--primary-color); font-family: 'Courier New', Courier, monospace;">
-                            ${{ m.valor_unitario_mat_prima }}
+                            {{ m.get_presentacion_mat_prima_display }}
                         </td>
                         <td class="text-center">
-                            <div class="fw-bold {% if m.cantidad_exist_mat_prima < 10 %}text-danger{% else %}text-white{% endif %}">
-                                {{ m.cantidad_exist_mat_prima }}
+                            <div class="fw-bold {% if m.cantidad_exist_mat_prima < 5 %}text-danger-wyk{% else %}text-white{% endif %}">
+                                {{ m.cantidad_exist_mat_prima|floatformat:"-3" }}
                             </div>
-                            <span class="text-info-secundaria">unidades</span>
+                            <span class="text-info-secundaria">{{ m.presentacion_mat_prima|lower }}</span>
                         </td>
                         <td class="text-center text-white" style="font-size: 0.85rem;">
                             {{ m.fecha_vencimiento_mat_prima|date:"d/m/Y" }}
@@ -129,7 +132,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="9" class="text-center text-muted py-4">No hay insumos registrados en el inventario de materia prima.</td>
+                        <td colspan="8" class="text-center text-muted py-4">No hay insumos registrados en el inventario de materia prima.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -146,6 +149,14 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
+                <span class="filter-label-group">Tipo de Presentación:</span>
+                <div class="filter-container">
+                    <div class="chip active" data-group="presentacion" data-filter="all">Todas</div>
+                    <div class="chip" data-group="presentacion" data-filter="KG">Kilos (KG)</div>
+                    <div class="chip" data-group="presentacion" data-filter="LT">Litros (LT)</div>
+                    <div class="chip" data-group="presentacion" data-filter="UN">Unidades (UN)</div>
+                </div>
+
                 <span class="filter-label-group">Estado del Insumo:</span>
                 <div class="filter-container">
                     <div class="chip active" data-group="estado" data-filter="all">Mostrar Todos</div>
@@ -177,7 +188,6 @@
         allowOutsideClick: false
     };
 
-    // --- MANEJO DE ALERTAS ---
     document.addEventListener('DOMContentLoaded', function() {
         {% if messages %}
             {% for message in messages %}
@@ -191,7 +201,6 @@
             {% endfor %}
         {% endif %}
 
-        // Inicializar Chips (Como en el ejemplo de Usuarios)
         document.querySelectorAll('.chip').forEach(chip => {
             chip.addEventListener('click', function() {
                 const group = this.getAttribute('data-group');
@@ -202,25 +211,26 @@
         });
     });
 
-    // --- LÓGICA DE FILTRADO UNIFICADA (Idéntica a Usuarios) ---
     function filtrarTodo() {
         const textoBusqueda = document.getElementById('inputBusqueda').value.toLowerCase();
         const estadoActivo = document.querySelector('.chip[data-group="estado"].active').getAttribute('data-filter');
+        const presentacionActiva = document.querySelector('.chip[data-group="presentacion"].active').getAttribute('data-filter');
+
         const rows = document.querySelectorAll('#tablaMateriaPrima tbody tr');
 
         rows.forEach(row => {
             const textoFila = row.innerText.toLowerCase();
             const rowEstado = row.getAttribute('data-estado');
+            const rowPresentacion = row.getAttribute('data-presentacion');
 
             const coincideBusqueda = textoFila.includes(textoBusqueda);
             const coincideEstado = (estadoActivo === 'all' || rowEstado === estadoActivo);
+            const coincidePresentacion = (presentacionActiva === 'all' || rowPresentacion === presentacionActiva);
 
-            // Si tuvieras más grupos (como categoría), aquí añadirías: && coincideCategoria
-            row.style.display = (coincideBusqueda && coincideEstado) ? '' : 'none';
+            row.style.display = (coincideBusqueda && coincideEstado && coincidePresentacion) ? '' : 'none';
         });
     }
 
-    // --- CAMBIAR ESTADO MATERIA PRIMA (AJAX + PASS) ---
     function ajaxCambiarEstadoMateria(id, element) {
         const nuevoEstado = element.checked;
         const label = document.getElementById(`label${id}`);
@@ -232,13 +242,12 @@
         Swal.fire({
             ...swalWykConfig,
             title: nuevoEstado ? `¿Activar ${nombreInsumo}?` : `¿Inactivar ${nombreInsumo}?`,
-            text: "Se requiere confirmación administrativa para cambiar el estado del insumo.",
+            text: "Se requiere confirmación administrativa para cambiar el estado.",
             icon: 'question',
             input: 'password',
             inputPlaceholder: 'Contraseña de administrador',
             showCancelButton: true,
             confirmButtonText: 'Confirmar',
-            cancelButtonText: 'Cancelar',
             preConfirm: (password) => {
                 if (!password) { Swal.showValidationMessage('La contraseña es requerida'); return false; }
                 return fetch("{% url 'verificar_password_ajax' %}", {
@@ -257,7 +266,11 @@
             if (result.isConfirmed) {
                 fetch("{% url 'cambiar_estado_materia_prima_ajax' %}", {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}', 'X-Requested-With': 'XMLHttpRequest' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
                     body: JSON.stringify({ id_materia_prima: id, nuevo_estado: nuevoEstado, password: result.value })
                 })
                 .then(r => r.json())
@@ -267,7 +280,7 @@
                         label.innerText = nuevoEstado ? 'Activo' : 'Inactivo';
                         label.className = `form-check-label text-status-toggle ${nuevoEstado ? 'text-active' : 'text-inactive'}`;
                         tr.setAttribute('data-estado', nuevoEstado ? 'activo' : 'inactivo');
-                        Swal.fire({ ...swalWykConfig, icon: 'success', title: '¡Listo!', text: 'Estado actualizado correctamente.' });
+                        Swal.fire({ ...swalWykConfig, icon: 'success', title: '¡Listo!', text: data.message });
                     } else {
                         Swal.fire({ ...swalWykConfig, icon: 'error', title: 'Error', text: data.message });
                     }
@@ -276,18 +289,16 @@
         });
     }
 
-    // --- ELIMINAR MATERIA PRIMA ---
     function confirmarEliminarMateria(id, nombre) {
         Swal.fire({
             ...swalWykConfig,
             title: `¿Eliminar ${nombre}?`,
-            text: "Esta acción no se puede deshacer. Confirme su contraseña:",
+            text: "Esta acción es irreversible. Ingrese su contraseña de administrador:",
             icon: 'warning',
             input: 'password',
             inputPlaceholder: 'Contraseña de administrador',
             showCancelButton: true,
             confirmButtonText: 'Sí, eliminar',
-            cancelButtonText: 'Cancelar',
             preConfirm: (password) => {
                 if (!password) { Swal.showValidationMessage('La contraseña es obligatoria'); return false; }
                 return fetch("{% url 'verificar_password_ajax' %}", {
