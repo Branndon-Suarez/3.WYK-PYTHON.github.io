@@ -4,6 +4,8 @@ from django.contrib import messages
 from django.db.models import ProtectedError
 from django.http import JsonResponse
 import json
+import csv
+import io
 
 from .models import Producto, MateriaPrima, AjusteInventario, AjusteIventarioMatPrima
 from .forms import ProductoForm, MateriaPrimaForm
@@ -179,6 +181,40 @@ def cambiar_estado_materia_prima_ajax(request):
         except Exception as e:
             return JsonResponse({'success': False, 'message': str(e)})
     return JsonResponse({'success': False}, status=400)
+
+
+@login_required
+def carga_masiva_materia_prima(request):
+    if request.method == 'POST':
+        csv_file = request.FILES.get('archivo_csv')
+
+        if not csv_file or not csv_file.name.endswith('.csv'):
+            messages.error(request, 'Por favor, sube un archivo con extensión .csv')
+            return redirect('lista_materia_prima')
+
+        try:
+            data_set = csv_file.read().decode('UTF-8')
+            io_string = io.StringIO(data_set)
+            next(io_string)  # Omitir encabezado
+
+            cont_creados = 0
+            for row in csv.reader(io_string, delimiter=',', quotechar='"'):
+                MateriaPrima.objects.create(
+                    nombre_materia_prima=row[0],
+                    fecha_vencimiento_mat_prima=row[1],
+                    cantidad_exist_mat_prima=row[2],
+                    presentacion_mat_prima=row[3],
+                    descripcion_mat_prima=row[4] if len(row) > 4 else '',
+                    id_usuario_fk_mat_prima=request.user,
+                    estado_materia_prima=True
+                )
+                cont_creados += 1
+
+            messages.success(request, f'¡Éxito! Se cargaron {cont_creados} insumos correctamente.')
+        except Exception as e:
+            messages.error(request, f'Error al procesar el archivo: {e}')
+
+    return redirect('lista_materia_prima')
 
 
 # ------------------------------ AJUSTES ------------------------------

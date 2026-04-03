@@ -15,6 +15,7 @@ urlpatterns = [
     path('materia-prima/editar/<int:id_materia_prima>/', views.editar_materia_prima, name='editar_materia_prima'),
     path('materia-prima/eliminar/<int:id_materia_prima>/', views.eliminar_materia_prima, name='eliminar_materia_prima'),
     path('materia-prima/cambiar-estado-ajax/', views.cambiar_estado_materia_prima_ajax, name='cambiar_estado_materia_prima_ajax'),
+    path('materia-prima/carga-masiva/', views.carga_masiva_materia_prima, name='carga_masiva_materia_prima'),
 
     # --- RUTAS DE AJUSTES DE INVENTARIO (PRODUCTOS) ---
     # Solo Lista y Crear (Por seguridad de inventario)
