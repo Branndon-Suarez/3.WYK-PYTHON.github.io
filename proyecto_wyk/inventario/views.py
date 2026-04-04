@@ -3,12 +3,14 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import ProtectedError
 from django.http import JsonResponse
+from django.db import transaction
 import json
 import csv
 import io
 
 from .models import Producto, MateriaPrima, AjusteInventario, AjusteIventarioMatPrima
 from .forms import ProductoForm, MateriaPrimaForm
+
 
 
 # ------------------------------ PRODUCTOS ------------------------------
@@ -254,7 +256,10 @@ def carga_masiva_materia_prima(request):
     return redirect('lista_materia_prima')
 
 
-# ------------------------------ AJUSTES ------------------------------
+# ------------------------------ AJUSTE PRODUCTO ------------------------------
+from django.utils import timezone
+from .forms import AjusteInventarioForm  # Asegúrate de que esté en las importaciones al inicio
+
 
 @login_required
 def lista_ajustes_producto(request):
@@ -262,8 +267,106 @@ def lista_ajustes_producto(request):
         'id_prod_fk_ajuste',
         'id_usuario_fk_ajuste'
     ).order_by('-fecha_ajuste')
-    return render(request, 'inventario/ajustes/lista_productos.html', {'ajustes': ajustes})
+    return render(request, 'inventario/ajuste_producto/lista.html', {'ajustes': ajustes})
 
+
+@login_required
+def crear_ajuste_producto(request):
+    if request.method == 'POST':
+        id_prod = request.POST.get('producto')
+        producto = get_object_or_404(Producto, id_producto=id_prod)
+
+        # Pasamos el producto al form para validar el stock disponible
+        form = AjusteInventarioForm(request.POST, producto=producto)
+
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    nuevo_ajuste = form.save(commit=False)
+                    nuevo_ajuste.id_prod_fk_ajuste = producto
+                    nuevo_ajuste.id_usuario_fk_ajuste = request.user
+                    nuevo_ajuste.fecha_ajuste = timezone.now()
+                    nuevo_ajuste.save()
+
+                    # Actualización de stock (Descontar)
+                    producto.cant_exist_producto -= nuevo_ajuste.cantidad_ajustada
+                    producto.save()
+
+                    messages.success(request, f"Ajuste registrado correctamente.")
+                    return redirect('lista_ajustes_producto')
+            except Exception as e:
+                messages.error(request, f"Error en la base de datos: {e}")
+        else:
+            # Captura errores de validación del formulario (ej: stock insuficiente)
+            for error in form.errors.values():
+                messages.error(request, error)
+            return redirect('lista_ajustes_producto')
+
+    productos = Producto.objects.filter(estado_producto=True)
+    return render(request, 'inventario/ajuste_producto/crear.html', {'productos': productos})
+
+
+@login_required
+def editar_ajuste_producto(request, id_ajuste):
+    ajuste = get_object_or_404(AjusteInventario, id_ajuste=id_ajuste)
+    producto = ajuste.id_prod_fk_ajuste
+
+    # Pasamos la instancia y el producto para recalcular el stock disponible real
+    form = AjusteInventarioForm(request.POST or None, instance=ajuste, producto=producto)
+
+    if request.method == 'POST':
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    # Guardamos el ajuste (sin confirmar en BD aún)
+                    ajuste_editado = form.save(commit=False)
+
+                    # 1. Revertimos el stock anterior (lo devolvemos al producto)
+                    # Usamos el valor original guardado en la base de datos
+                    valor_anterior = AjusteInventario.objects.get(pk=id_ajuste).cantidad_ajustada
+                    producto.cant_exist_producto += valor_anterior
+
+                    # 2. Aplicamos la nueva resta (el valor actualizado en el form)
+                    producto.cant_exist_producto -= ajuste_editado.cantidad_ajustada
+                    producto.save()
+
+                    ajuste_editado.save()
+                    messages.success(request, "Ajuste actualizado correctamente y stock recalculado.")
+                    return redirect('lista_ajustes_producto')
+            except Exception as e:
+                messages.error(request, f"Error al editar: {e}")
+        else:
+            for error in form.errors.values():
+                messages.error(request, error)
+
+    return render(request, 'inventario/ajuste_producto/editar.html', {'ajuste': ajuste, 'form': form})
+
+
+@login_required
+def eliminar_ajuste_producto(request, id_ajuste):
+    ajuste = get_object_or_404(AjusteInventario, id_ajuste=id_ajuste)
+
+    if request.method == 'POST':
+        password_confirm = request.POST.get('password_confirm')
+        if not request.user.check_password(password_confirm):
+            messages.error(request, "Acceso denegado. Contraseña incorrecta.")
+            return redirect('lista_ajustes_producto')
+
+        try:
+            with transaction.atomic():
+                producto = ajuste.id_prod_fk_ajuste
+                # Devolvemos la cantidad al stock antes de borrar el registro
+                producto.cant_exist_producto += ajuste.cantidad_ajustada
+                producto.save()
+
+                ajuste.delete()
+                messages.success(request, f"Ajuste #{id_ajuste} eliminado e inventario restablecido.")
+        except Exception as e:
+            messages.error(request, f"Error al eliminar: {e}")
+
+    return redirect('lista_ajustes_producto')
+
+# ------------------------------ AJUSTE MATERIA PRIMA ------------------------------
 
 @login_required
 def lista_ajustes_materia_prima(request):
@@ -272,12 +375,6 @@ def lista_ajustes_materia_prima(request):
         'id_usuario_fk_ajuste_mat'
     ).order_by('-fecha_ajust_mat')
     return render(request, 'inventario/ajustes/lista_materia.html', {'ajustes': ajustes})
-
-
-@login_required
-def crear_ajuste_producto(request):
-    # Por implementar según lógica de negocio
-    pass
 
 
 @login_required

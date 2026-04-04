@@ -19,12 +19,12 @@ urlpatterns = [
     path('materia-prima/carga-masiva/', views.carga_masiva_materia_prima, name='carga_masiva_materia_prima'),
 
     # --- RUTAS DE AJUSTES DE INVENTARIO (PRODUCTOS) ---
-    # Solo Lista y Crear (Por seguridad de inventario)
     path('ajustes/productos/', views.lista_ajustes_producto, name='lista_ajustes_producto'),
     path('ajustes/productos/crear/', views.crear_ajuste_producto, name='crear_ajuste_producto'),
+    path('ajustes/productos/editar/<int:id_ajuste>/', views.editar_ajuste_producto, name='editar_ajuste_producto'),
+    path('ajustes/productos/eliminar/<int:id_ajuste>/', views.eliminar_ajuste_producto, name='eliminar_ajuste_producto'),
 
     # --- RUTAS DE AJUSTES DE INVENTARIO (MATERIA PRIMA) ---
-    # Solo Lista y Crear
     path('ajustes/materia-prima/', views.lista_ajustes_materia_prima, name='lista_ajustes_materia_prima'),
     path('ajustes/materia-prima/crear/', views.crear_ajuste_materia_prima, name='crear_ajuste_materia_prima'),
 ]

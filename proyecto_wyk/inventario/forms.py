@@ -61,3 +61,38 @@ class MateriaPrimaForm(forms.ModelForm):
         if MateriaPrima.objects.filter(nombre_materia_prima=nombre).exclude(pk=self.instance.pk).exists():
             raise forms.ValidationError(f"La materia prima '{nombre}' ya existe.")
         return nombre
+
+
+class AjusteInventarioForm(forms.ModelForm):
+    class Meta:
+        model = AjusteInventario
+        fields = ['tipo_ajuste', 'cantidad_ajustada', 'descripcion']
+        widgets = {
+            'tipo_ajuste': forms.Select(attrs={'class': 'input-wyk'}),
+            'cantidad_ajustada': forms.NumberInput(attrs={'class': 'input-wyk', 'min': '1'}),
+            'descripcion': forms.Textarea(attrs={'class': 'input-wyk', 'rows': 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        # Extraemos el producto del constructor para validaciones de stock
+        self.producto = kwargs.pop('producto', None)
+        super().__init__(*args, **kwargs)
+
+    def clean_cantidad_ajustada(self):
+        nueva_cantidad = self.cleaned_data.get('cantidad_ajustada')
+
+        if self.producto:
+            # Calculamos el stock base (actual)
+            stock_base = self.producto.cant_exist_producto
+
+            # Si estamos editando un registro existente, sumamos lo que ya se había quitado
+            if self.instance.pk:
+                stock_base += self.instance.cantidad_ajustada
+
+            # Verificación lógica: no se puede quitar más de lo disponible
+            if nueva_cantidad > stock_base:
+                raise forms.ValidationError(
+                    f"Stock insuficiente. El máximo disponible para ajustar es {stock_base}."
+                )
+
+        return nueva_cantidad
