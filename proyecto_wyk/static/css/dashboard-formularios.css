@@ -33,8 +33,8 @@
     width: 100%;
     box-sizing: border-box;
     display: flex;
-    flex-direction: row; /* Cambiado a row para soportar el botón a la derecha */
-    justify-content: space-between;
+    flex-direction: row;
+    justify-content: flex-start; /* Alineado a la izquierda */
     align-items: center;
     height: 101px;
     min-height: 101px;
@@ -49,6 +49,8 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
+    /* Evita que el texto choque con el botón absoluto */
+    padding-right: 180px;
 }
 
 .form-header-wyk h2 {
@@ -57,6 +59,7 @@
     font-weight: 600;
     margin: 0;
     line-height: 1.2;
+    display: block; /* Asegura comportamiento de bloque */
 }
 
 .form-header-wyk p {
@@ -66,9 +69,10 @@
     color: white;
     margin-bottom: 0;
     line-height: 1.2;
+    display: block; /* Asegura comportamiento de bloque */
 }
 
-/* --- BOTÓN DE CARGA MASIVA EN HEADER --- */
+/* --- BOTÓN DE CARGA MASIVA (INDEPENDIENTE) --- */
 .btn-bulk-header {
     background: rgba(255, 255, 255, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.4);
@@ -85,12 +89,18 @@
     display: flex;
     align-items: center;
     gap: 8px;
+
+    /* Posicionamiento absoluto para no afectar al texto */
+    position: absolute;
+    right: 35px;
+    top: 50%;
+    transform: translateY(-50%);
 }
 
 .btn-bulk-header:hover {
     background: white;
     color: var(--primary-dim);
-    transform: translateY(-2px);
+    transform: translateY(-50%) scale(1.02);
     box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 
@@ -142,20 +152,16 @@
     outline: none;
     box-sizing: border-box;
     transition: var(--transition);
-
-    /* Elimina el estilo por defecto de los selectores en algunos navegadores */
     appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;
 }
 
-/* FIX CRÍTICO: Fondo oscuro para las opciones del desplegable */
 .input-wyk option {
     background-color: var(--background-card) !important;
     color: white !important;
 }
 
-/* Si es un select, le ponemos una flechita sutil a la derecha */
 select.input-wyk {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='white' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
@@ -225,23 +231,20 @@ body.swal2-shown {
     padding-right: 0 !important;
 }
 
-/* --- ESTILOS GLOBALES PARA MODALES WYK (VERSIÓN FINAL) --- */
-
-/* Estilo de la tarjeta del modal */
+/* --- ESTILOS GLOBALES PARA MODALES WYK --- */
 .modal-wyk-custom .modal-content {
     background: #1a0a00 !important;
     border: 2px solid var(--primary-wyk) !important;
     border-radius: 15px !important;
     box-shadow: 0 0 40px rgba(0, 0, 0, 0.9);
-    padding: 10px; /* Margen para alejar el contenido de los bordes externos */
+    padding: 10px;
 }
 
 .modal-header-wyk {
     border-bottom: 1px solid rgba(245, 166, 35, 0.2) !important;
-    padding: 25px 40px !important; /* Más aire lateral para el título */
+    padding: 25px 40px !important;
 }
 
-/* El fondo oscuro de Bootstrap */
 .modal-backdrop {
     background-color: #000 !important;
 }
@@ -249,7 +252,6 @@ body.swal2-shown {
     opacity: 0.85 !important;
 }
 
-/* Filas de la tabla */
 .fila-seleccionable {
     cursor: pointer;
     transition: 0.2s;
@@ -263,19 +265,17 @@ body.swal2-shown {
     font-weight: bold;
 }
 
-/* --- FIX TOTAL: FORZAR MODAL FLOTANTE --- */
 .modal-wyk-custom {
-    display: none; /* Bootstrap lo cambiará a block al abrir */
+    display: none;
     position: fixed !important;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    z-index: 2000 !important; /* Por encima de todo */
-    background-color: rgba(0, 0, 0, 0.7); /* Fondo oscuro manual por si falla el backdrop */
+    z-index: 2000 !important;
+    background-color: rgba(0, 0, 0, 0.7);
 }
 
-/* Cuando el modal tiene la clase 'show' (está abierto) */
 .modal-wyk-custom.show {
     display: flex !important;
     align-items: center;
@@ -291,7 +291,6 @@ body.swal2-shown {
     z-index: 2001;
 }
 
-/* --- COMPONENTE: BUSCADOR DORADO DENTRO DE MODALES --- */
 .modal-search-wrapper {
     padding: 15px 25px;
     background: rgba(255, 255, 255, 0.02);
@@ -325,13 +324,11 @@ body.swal2-shown {
     font-size: 0.9rem;
 }
 
-/* --- ADICIÓN: ESTILOS ESPECÍFICOS PARA CARGA MASIVA --- */
-
 .csv-format-box {
     background: rgba(0, 0, 0, 0.4);
     border: 1px dashed var(--primary-wyk);
     border-radius: 12px;
-    padding: 20px; /* Más aire interno para que el código no esté pegado */
+    padding: 20px;
     margin-bottom: 25px;
 }
 
@@ -341,7 +338,6 @@ body.swal2-shown {
     word-break: break-all;
 }
 
-/* Personalización del botón "Seleccionar archivo" para inputs tipo file */
 input[type="file"].input-wyk::file-selector-button {
     background: var(--btn-coffee);
     color: white;
@@ -360,10 +356,8 @@ input[type="file"].input-wyk::file-selector-button:hover {
     border-color: var(--primary-wyk);
 }
 
-/* --- REFINAMIENTO ESTÉTICO CARGA MASIVA (MEJORA DE LETRA Y CONTRASTE) --- */
-
 .modal-wyk-custom .modal-body {
-    padding: 30px 45px !important; /* Más aire lateral para que los textos respiren */
+    padding: 30px 45px !important;
 }
 
 .modal-wyk-custom .modal-body p {
@@ -380,7 +374,6 @@ input[type="file"].input-wyk::file-selector-button:hover {
     letter-spacing: 1px;
 }
 
-/* Estilo para que el nombre del archivo seleccionado se vea mejor */
 .input-file-display {
     color: var(--primary-wyk);
     font-size: 0.9rem;
@@ -388,9 +381,8 @@ input[type="file"].input-wyk::file-selector-button:hover {
     margin-top: 5px;
 }
 
-/* Pie del modal */
 .modal-footer {
-    padding: 25px 45px !important; /* Simetría con el body */
+    padding: 25px 45px !important;
     border-top: 1px solid rgba(245, 166, 35, 0.1) !important;
 }
 
@@ -404,9 +396,19 @@ input[type="file"].input-wyk::file-selector-button:hover {
         align-items: center;
     }
 
+    .header-content-wyk {
+        padding-right: 0; /* Quitamos el espacio extra en móvil */
+    }
+
     .btn-bulk-header {
+        position: static; /* En móvil vuelve al flujo normal */
+        transform: none;
         margin-top: 15px;
         width: 100%;
         justify-content: center;
+    }
+
+    .btn-bulk-header:hover {
+        transform: translateY(-2px);
     }
 }
