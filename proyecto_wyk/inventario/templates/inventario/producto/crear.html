@@ -95,8 +95,15 @@
 {% block content %}
 <div class="main-form-wrapper fade-in">
     <div class="form-header-wyk">
-        <h2>Registrar Nuevo Producto</h2>
-        <p>Completa los detalles para añadir un artículo al catálogo de inventario.</p>
+        <div class="header-content-wyk">
+            <h2>Registrar Nuevo Producto</h2>
+            <p>Completa los detalles para añadir un artículo al catálogo de inventario.</p>
+        </div>
+        <div class="header-action-wyk">
+            <button type="button" class="btn-bulk-header" data-bs-toggle="modal" data-bs-target="#modalCargaMasivaProductos">
+                <i class="fas fa-file-upload"></i> ¿CARGA MASIVA?
+            </button>
+        </div>
     </div>
 
     <div class="form-container-wyk">
@@ -110,8 +117,8 @@
                     <div class="row">
                         <div class="form-group-wyk col-md-4">
                             <label class="form-label-wyk">Código / ID</label>
-                            <input type="text" name="id_producto" id="id_id_producto" class="input-wyk"
-                                   placeholder="Ej: PRD-001" value="{{ request.POST.id_producto|default:'' }}" required>
+                            <input type="number" name="id_producto" id="id_id_producto" class="input-wyk"
+                                   placeholder="Ej: 101" value="{{ request.POST.id_producto|default:'' }}" required>
                         </div>
 
                         <div class="form-group-wyk col-md-8">
@@ -123,7 +130,7 @@
                         <div class="form-group-wyk col-md-6">
                             <label class="form-label-wyk">Precio Unitario ($)</label>
                             <input type="number" name="valor_unitario_product" id="id_precio" class="input-wyk"
-                                   placeholder="0.00" step="0.01" value="{{ request.POST.valor_unitario_product|default:'' }}" required>
+                                   placeholder="0" value="{{ request.POST.valor_unitario_product|default:'' }}" required>
                         </div>
 
                         <div class="form-group-wyk col-md-6">
@@ -185,10 +192,45 @@
         </form>
     </div>
 </div>
+
+<div class="modal fade modal-wyk-custom" id="modalCargaMasivaProductos" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header modal-header-wyk">
+                <h5 class="modal-title text-gold">
+                    <i class="fas fa-boxes"></i> IMPORTAR PRODUCTOS
+                </h5>
+            </div>
+
+            <form action="{% url 'carga_masiva_productos' %}" method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <p>Suba un archivo <b>.csv</b> con las columnas:</p>
+
+                    <div class="csv-format-box">
+                        <code>ID, Nombre, Valor Unitario, Stock, Fecha Vencimiento (AAAA-MM-DD), Tipo (PANADERIA/PASTELERIA/ASEO), Descripción</code>
+                    </div>
+
+                    <div class="form-group-wyk mt-4">
+                        <label class="form-label-wyk">Seleccionar Archivo CSV</label>
+                        <input type="file" name="archivo_csv" class="input-wyk" accept=".csv" required>
+                    </div>
+                </div>
+
+                <div class="modal-footer" style="border-top: 1px solid rgba(245, 166, 35, 0.1); padding: 20px;">
+                    <button type="submit" class="btn-save-wyk" style="width: auto; padding: 10px 25px;">
+                        <i class="fas fa-upload"></i> Subir e Importar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script src="{% static 'js/sweetalert2.all.min.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     const swalConfig = {
         background: '#1a0a00',
@@ -238,7 +280,6 @@
         const precio = document.getElementById('id_precio').value;
         const tipo = document.getElementById('id_tipo').value;
 
-        // Validación de campos obligatorios (excluyendo descripción)
         if (!id || !nombre || !precio || !tipo) {
             Swal.fire({
                 ...swalConfig,
@@ -252,7 +293,7 @@
         Swal.fire({
             ...swalConfig,
             title: '¿Registrar Producto?',
-            text: `Se añadirá "${nombre}" al catálogo de inventario.`,
+            text: `Se añadirá "${nombre.toUpperCase()}" al catálogo de inventario.`,
             icon: 'question',
             showCancelButton: true,
             confirmButtonText: 'Sí, registrar',

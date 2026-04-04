@@ -39,6 +39,43 @@ def crear_producto(request):
 
 
 @login_required
+def carga_masiva_productos(request):
+    if request.method == 'POST':
+        csv_file = request.FILES.get('archivo_csv')
+
+        if not csv_file or not csv_file.name.endswith('.csv'):
+            messages.error(request, 'Por favor, sube un archivo con extensión .csv')
+            return redirect('lista_productos')
+
+        try:
+            data_set = csv_file.read().decode('UTF-8')
+            io_string = io.StringIO(data_set)
+            next(io_string)  # Omitir encabezado
+
+            cont_creados = 0
+            for row in csv.reader(io_string, delimiter=',', quotechar='"'):
+                # Columnas: 0:ID, 1:Nombre, 2:Valor, 3:Stock, 4:Vencimiento, 5:Tipo, 6:Descripción
+                Producto.objects.create(
+                    id_producto=row[0],
+                    nombre_producto=row[1].upper(),
+                    valor_unitario_product=row[2],
+                    cant_exist_producto=row[3],
+                    fecha_vencimiento_product=row[4],
+                    tipo_producto=row[5].upper(),
+                    descripcion_producto=row[6] if len(row) > 6 else '',
+                    id_usuario_fk_producto=request.user,
+                    estado_producto=True
+                )
+                cont_creados += 1
+
+            messages.success(request, f'¡Éxito! Se cargaron {cont_creados} productos correctamente.')
+        except Exception as e:
+            messages.error(request, f'Error al procesar el archivo: {e}')
+
+    return redirect('lista_productos')
+
+
+@login_required
 def editar_producto(request, id_producto):
     producto = get_object_or_404(Producto, id_producto=id_producto)
     form = ProductoForm(request.POST or None, request.FILES or None, instance=producto)

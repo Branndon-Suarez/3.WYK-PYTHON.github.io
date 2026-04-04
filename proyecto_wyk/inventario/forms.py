@@ -41,10 +41,10 @@ class ProductoForm(forms.ModelForm):
 class MateriaPrimaForm(forms.ModelForm):
     class Meta:
         model = MateriaPrima
-        exclude = ['id_usuario_fk_mat_prima']
+        # Se excluye id_materia_prima ya que es autoincremental
+        exclude = ['id_materia_prima', 'id_usuario_fk_mat_prima']
+
         widgets = {
-            # Ocultamos el ID si es autoincremental en DB, o lo dejamos si lo digitas manualmente
-            'id_materia_prima': forms.NumberInput(attrs={'class': 'form-control', 'readonly': 'readonly'}),
             'nombre_materia_prima': forms.TextInput(attrs={'class': 'form-control'}),
             'fecha_vencimiento_mat_prima': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             # step="0.001" permite que el navegador acepte los 3 decimales (gramos/mililitros)
@@ -53,12 +53,6 @@ class MateriaPrimaForm(forms.ModelForm):
             'presentacion_mat_prima': forms.Select(attrs={'class': 'form-control'}),
             'descripcion_mat_prima': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
             'estado_materia_prima': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-        }
-        # Personalización de mensajes de error para campos únicos
-        error_messages = {
-            'id_materia_prima': {
-                'unique': "Ya existe una materia prima registrada con este ID.",
-            },
         }
 
     def clean_nombre_materia_prima(self):
