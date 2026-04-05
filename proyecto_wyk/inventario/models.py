@@ -109,20 +109,18 @@ class AjusteInventario(models.Model):
 
 
 # ---------------------------------MODELO AJUSTE INVENTARIO MATERIA PRIMA---------------------------------
-class AjusteIventarioMatPrima(models.Model):
+class AjusteInventarioMatPrima(models.Model):  # Corregido nombre (Inventario)
     class TipoAjustMat(models.TextChoices):
         DANADO = 'DAÑADO', 'Dañado'
         ROBO = 'ROBO', 'Robo'
         PERDIDA = 'PERDIDA', 'Pérdida'
         CADUCADO = 'CADUCADO', 'Caducado'
+        # Nota: No incluye MUESTRA según el script SQL (tipo_ajuste_mat)
 
-    # 1. Cambiado a AutoField y primary_key=True
     id_ajust_mat = models.AutoField(primary_key=True, db_column='id_ajus_mat')
-
     fecha_ajust_mat = models.DateTimeField(db_column='fecha_ajus_mat')
     tipo_ajust_mat = models.CharField(max_length=20, choices=TipoAjustMat.choices, db_column='tipo_ajus_mat')
-
-    # CAMBIO A DECIMAL(10,3) para ajustes de gramos
+    # DECIMAL(10,3) coincide con el SQL
     cantidad_ajustada_mat = models.DecimalField(max_digits=10, decimal_places=3, db_column='cantidad_ajustada_mat')
 
     id_mat_fk_ajuste_mat = models.ForeignKey(
@@ -130,7 +128,6 @@ class AjusteIventarioMatPrima(models.Model):
         on_delete=models.PROTECT,
         db_column='id_mat_fk_ajuste_mat'
     )
-
     id_usuario_fk_ajuste_mat = models.ForeignKey(
         'usuarios.Usuario',
         on_delete=models.PROTECT,
