@@ -324,6 +324,26 @@ body.swal2-shown {
     font-size: 0.9rem;
 }
 
+/* LIMITACIÓN DE ALTURA PARA SCROLL TRAS 6 REGISTROS */
+.modal-wyk-custom .table-responsive {
+    max-height: 380px; /* Ajustado para mostrar ~6 registros */
+    overflow-y: auto !important;
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary-wyk) rgba(255, 255, 255, 0.05);
+}
+
+/* Estilo del scrollbar para Chrome/Edge/Safari */
+.modal-wyk-custom .table-responsive::-webkit-scrollbar {
+    width: 6px;
+}
+.modal-wyk-custom .table-responsive::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+}
+.modal-wyk-custom .table-responsive::-webkit-scrollbar-thumb {
+    background: var(--primary-wyk);
+    border-radius: 10px;
+}
+
 .csv-format-box {
     background: rgba(0, 0, 0, 0.4);
     border: 1px dashed var(--primary-wyk);
