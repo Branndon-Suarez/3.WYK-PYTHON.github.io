@@ -70,6 +70,20 @@
             margin-bottom: 10px;
             margin-top: 15px;
         }
+
+        /* Estilo para fecha y hora apilada */
+        .datetime-container {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.2;
+        }
+        .datetime-date {
+            font-weight: 500;
+        }
+        .datetime-time {
+            font-size: 0.75rem;
+            opacity: 0.7;
+        }
     </style>
 {% endblock %}
 
@@ -111,7 +125,7 @@
                 <thead>
                     <tr>
                         <th style="width: 60px;">ID</th>
-                        <th style="width: 100px;">FECHA</th>
+                        <th style="width: 140px;">FECHA Y HORA</th>
                         <th>INSUMO / MATERIA PRIMA</th>
                         <th class="text-center">CANTIDAD</th>
                         <th>MOTIVO / DETALLE</th>
@@ -123,7 +137,12 @@
                     {% for a in ajustes %}
                     <tr data-motivo="{{ a.tipo_ajust_mat|lower }}">
                         <td class="fw-bold" style="color: var(--primary-color);">{{ a.id_ajust_mat }}</td>
-                        <td class="text-white">{{ a.fecha_ajust_mat|date:"d/m/Y" }}</td>
+                        <td class="text-white">
+                            <div class="datetime-container">
+                                <span class="datetime-date">{{ a.fecha_ajust_mat|date:"d/m/Y" }}</span>
+                                <span class="datetime-time">{{ a.fecha_ajust_mat|date:"H:i" }}</span>
+                            </div>
+                        </td>
                         <td>
                             <div class="fw-bold text-white">{{ a.id_mat_fk_ajuste_mat.nombre_materia_prima }}</div>
                             <span class="text-detail" style="font-size: 0.7rem;">PRESENTACIÓN: {{ a.id_mat_fk_ajuste_mat.get_presentacion_mat_prima_display }}</span>

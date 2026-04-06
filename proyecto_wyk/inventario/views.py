@@ -265,7 +265,7 @@ def lista_ajustes_producto(request):
     ajustes = AjusteInventario.objects.all().select_related(
         'id_prod_fk_ajuste',
         'id_usuario_fk_ajuste'
-    ).order_by('-fecha_ajuste')
+    ).order_by('id_ajuste')
     return render(request, 'inventario/ajuste_producto/lista.html', {'ajustes': ajustes})
 
 
@@ -372,7 +372,7 @@ def lista_ajustes_mat_prima(request):
     ajustes = AjusteInventarioMatPrima.objects.all().select_related(
         'id_mat_fk_ajuste_mat',
         'id_usuario_fk_ajuste_mat'
-    ).order_by('-fecha_ajust_mat')
+    ).order_by('id_ajust_mat')
     return render(request, 'inventario/ajuste_mat/lista.html', {'ajustes': ajustes})
 
 

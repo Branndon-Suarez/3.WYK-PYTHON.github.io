@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load l10n %}
 
 {% block title %}Editar Materia Prima - WYK{% endblock %}
 
@@ -59,7 +60,7 @@
                     <div class="form-group-wyk">
                         <label class="form-label-wyk">Existencias Actuales</label>
                         <input type="number" name="cantidad_exist_mat_prima" id="id_cantidad_exist" class="input-wyk"
-                               value="{{ form.cantidad_exist_mat_prima.value|default:materia.cantidad_exist_mat_prima }}" step="0.001" required>
+                               value="{{ form.cantidad_exist_mat_prima.value|default:materia.cantidad_exist_mat_prima|unlocalize }}" step="0.001" required>
                     </div>
                 </div>
             </div>
