@@ -1,0 +1,306 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Historial Ajustes Materia Prima - WYK{% endblock %}
+
+{% block extra_css %}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/dashboard-tablas.css' %}">
+
+    <style>
+        .text-detail { 
+            font-size: 0.8rem; 
+            color: rgba(255, 255, 255, 0.6); 
+            display: block;
+        }
+        .text-detail i { color: var(--primary-color); width: 18px; }
+        
+        .badge-movimiento {
+            background: rgba(255, 138, 138, 0.1);
+            color: #ff8a8a;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border: 1px solid rgba(255, 138, 138, 0.3);
+            text-transform: uppercase;
+        }
+
+        .truncate-text {
+            max-width: 250px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: help;
+        }
+
+        .swal2-validation-message {
+            background-color: transparent !important;
+            color: #ff8a8a !important;
+            font-weight: 600 !important;
+            border: none !important;
+            margin-top: 15px !important;
+        }
+
+        .responsable-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            line-height: 1.3;
+        }
+        .responsable-name {
+            color: #fff;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .responsable-role {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .filter-label-group {
+            display: block;
+            color: var(--primary-color);
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            margin-top: 15px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container-custom fade-in">
+    <div class="header">
+        <div class="greeting">
+            <div class="s">Ajustes de <span class="n">Materia Prima</span></div>
+            <div class="subtitle" style="opacity: 0.8; font-size: 0.85rem; color: white;">Registro de mermas e insumos afectados</div>
+        </div>
+
+        <div class="d-flex align-items-center">
+            <div class="search-container me-3">
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" id="inputBusqueda" class="form-control"
+                           placeholder="Buscar ajuste o insumo..." onkeyup="filtrarTodo()">
+                </div>
+            </div>
+
+            <button type="button" class="btn-filtro-header me-3" data-bs-toggle="modal" data-bs-target="#filtroAvanzadoModal">
+                <i class="fas fa-filter"></i> Filtros
+            </button>
+
+            <button type="button" class="btn-nuevo-header me-3"
+                onclick="generarPDFGlobal('tablaAjustesMat', 'Historial de Ajustes Materia Prima', [6])">
+                <i class="fas fa-file-pdf"></i> GENERAR PDF
+            </button>
+
+            <a href="{% url 'crear_ajuste_mat_prima' %}" class="btn-nuevo-header">+ Nuevo Ajuste Insumo</a>
+        </div>
+    </div>
+
+    <div class="card-wyk-table">
+        <div class="table-responsive">
+            <table class="table-wyk" id="tablaAjustesMat">
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">ID</th>
+                        <th style="width: 100px;">FECHA</th>
+                        <th>INSUMO / MATERIA PRIMA</th>
+                        <th class="text-center">CANTIDAD</th>
+                        <th>MOTIVO / DETALLE</th>
+                        <th class="text-center">RESPONSABLE</th>
+                        <th class="text-center">ACCIONES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in ajustes %}
+                    <tr data-motivo="{{ a.tipo_ajust_mat|lower }}">
+                        <td class="fw-bold" style="color: var(--primary-color);">{{ a.id_ajust_mat }}</td>
+                        <td class="text-white">{{ a.fecha_ajust_mat|date:"d/m/Y" }}</td>
+                        <td>
+                            <div class="fw-bold text-white">{{ a.id_mat_fk_ajuste_mat.nombre_materia_prima }}</div>
+                            <span class="text-detail" style="font-size: 0.7rem;">PRESENTACIÓN: {{ a.id_mat_fk_ajuste_mat.get_presentacion_mat_prima_display }}</span>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge-movimiento">- {{ a.cantidad_ajustada_mat }}</span>
+                        </td>
+                        <td>
+                            <span class="text-detail">
+                                <i class="fas fa-tag"></i> {{ a.tipo_ajust_mat }}
+                                <br>
+                                <div class="truncate-text" title="{{ a.descripcion|default:'Sin detalle' }}">
+                                    <i class="fas fa-comment-alt"></i> {{ a.descripcion|default:"Sin detalle" }}
+                                </div>
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <div class="responsable-wrapper">
+                                <span class="responsable-name">{{ a.id_usuario_fk_ajuste_mat.nombre }}</span>
+                                <span class="responsable-role">{{ a.id_usuario_fk_ajuste_mat.rol_fk_usuario.rol|default:"PERSONAL" }}</span>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <a href="{% url 'editar_ajuste_mat_prima' a.id_ajust_mat %}" class="btn-action"><i class="fas fa-edit"></i></a>
+                            <button type="button" onclick="confirmarEliminarAjuste('{{ a.id_ajust_mat }}', '{{ a.id_mat_fk_ajuste_mat.nombre_materia_prima }}')" class="btn-action" style="color: #ff8a8a;">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">No se han registrado ajustes de materia prima todavía.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="filtroAvanzadoModal" tabindex="-1">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content modal-content-wyk">
+            <div class="modal-header modal-header-wyk">
+                <h5 class="modal-title text-gold"><i class="fas fa-sliders-h"></i> Filtros de Ajustes</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <span class="filter-label-group">Filtrar por Motivo:</span>
+                <div class="filter-container">
+                    <div class="chip active" data-group="motivo" data-filter="all">Todos</div>
+                    <div class="chip" data-group="motivo" data-filter="dañado">Dañado</div>
+                    <div class="chip" data-group="motivo" data-filter="robo">Robo</div>
+                    <div class="chip" data-group="motivo" data-filter="perdida">Pérdida</div>
+                    <div class="chip" data-group="motivo" data-filter="caducado">Caducado</div>
+                </div>
+                <p class="text-white-50 small mt-3">Selecciona un chip para filtrar los registros en tiempo real.</p>
+            </div>
+            <div class="modal-footer" style="border-top: none;">
+                <button type="button" class="btn btn-secondary w-100" data-bs-dismiss="modal" style="border-radius: 12px;">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+<script src="{% static 'js/reportes-pdf.js' %}"></script>
+<script src="{% static 'js/sweetalert2.all.min.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    const swalWykConfig = {
+        background: '#1a0a00',
+        color: '#fff',
+        confirmButtonColor: '#f5a623',
+        heightAuto: false,
+        allowOutsideClick: false
+    };
+
+    document.addEventListener('DOMContentLoaded', function() {
+        {% if messages %}
+            {% for message in messages %}
+                Swal.fire({
+                    ...swalWykConfig,
+                    icon: "{% if 'success' in message.tags %}success{% else %}error{% endif %}",
+                    title: "{% if 'success' in message.tags %}¡Operación Exitosa!{% else %}Atención{% endif %}",
+                    text: "{{ message|escapejs }}",
+                    confirmButtonText: 'Aceptar'
+                });
+            {% endfor %}
+        {% endif %}
+
+        document.querySelectorAll('.chip').forEach(chip => {
+            chip.addEventListener('click', function() {
+                const group = this.getAttribute('data-group');
+                document.querySelectorAll(`.chip[data-group="${group}"]`).forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+                filtrarTodo();
+            });
+        });
+    });
+
+    function filtrarTodo() {
+        const textoBusqueda = document.getElementById('inputBusqueda').value.toLowerCase();
+        const motivoActivo = document.querySelector('.chip[data-group="motivo"].active').getAttribute('data-filter');
+        const rows = document.querySelectorAll('#tablaAjustesMat tbody tr');
+
+        rows.forEach(row => {
+            const textoFila = row.innerText.toLowerCase();
+            const rowMotivo = row.getAttribute('data-motivo');
+            const coincideBusqueda = textoFila.includes(textoBusqueda);
+            const coincideMotivo = (motivoActivo === 'all' || rowMotivo === motivoActivo);
+            row.style.display = (coincideBusqueda && coincideMotivo) ? '' : 'none';
+        });
+    }
+
+    function confirmarEliminarAjuste(id, insumo) {
+        Swal.fire({
+            ...swalWykConfig,
+            title: `¿Eliminar ajuste #${id}?`,
+            text: `¡Atención! Se devolverá el stock al insumo: ${insumo}. Ingresa tu contraseña para confirmar:`,
+            icon: 'warning',
+            input: 'password',
+            inputAttributes: {
+                placeholder: 'Contraseña de administrador',
+                autocapitalize: 'off'
+            },
+            showCancelButton: true,
+            cancelButtonText: 'Cancelar',
+            confirmButtonText: 'Sí, eliminar ajuste',
+            preConfirm: (password) => {
+                if (!password) {
+                    Swal.showValidationMessage('La contraseña es obligatoria');
+                    return false;
+                }
+                return fetch("{% url 'verificar_password_ajax' %}", {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `password=${encodeURIComponent(password)}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.valid) throw new Error('Contraseña incorrecta');
+                    return password;
+                })
+                .catch(error => {
+                    Swal.showValidationMessage(error.message);
+                });
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = "{% url 'eliminar_ajuste_mat_prima' 0 %}".replace('0', id);
+
+                const csrf = document.createElement('input');
+                csrf.type = 'hidden';
+                csrf.name = 'csrfmiddlewaretoken';
+                csrf.value = '{{ csrf_token }}';
+
+                const pass = document.createElement('input');
+                pass.type = 'hidden';
+                pass.name = 'password_confirm';
+                pass.value = result.value;
+
+                form.appendChild(csrf);
+                form.appendChild(pass);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        });
+    }
+</script>
+{% endblock %}

@@ -25,6 +25,9 @@ urlpatterns = [
     path('ajustes/productos/eliminar/<int:id_ajuste>/', views.eliminar_ajuste_producto, name='eliminar_ajuste_producto'),
 
     # --- RUTAS DE AJUSTES DE INVENTARIO (MATERIA PRIMA) ---
-    path('ajustes/materia-prima/', views.lista_ajustes_materia_prima, name='lista_ajustes_materia_prima'),
-    path('ajustes/materia-prima/crear/', views.crear_ajuste_materia_prima, name='crear_ajuste_materia_prima'),
+    # Aquí unificamos los nombres para que base.html y lista.html funcionen:
+    path('ajustes/materia-prima/', views.lista_ajustes_mat_prima, name='lista_ajustes_materia_prima'),
+    path('ajustes/materia-prima/crear/', views.crear_ajuste_mat_prima, name='crear_ajuste_mat_prima'),
+    path('ajustes/materia-prima/editar/<int:id_ajust_mat>/', views.editar_ajuste_mat_prima, name='editar_ajuste_mat_prima'),
+    path('ajustes/materia-prima/eliminar/<int:id_ajust_mat>/', views.eliminar_ajuste_mat_prima, name='eliminar_ajuste_mat_prima'),
 ]

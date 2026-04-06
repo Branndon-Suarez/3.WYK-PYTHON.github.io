@@ -8,8 +8,10 @@ import json
 import csv
 import io
 
-from .models import Producto, MateriaPrima, AjusteInventario, AjusteIventarioMatPrima
-from .forms import ProductoForm, MateriaPrimaForm
+from .models import Producto, MateriaPrima, AjusteInventario, AjusteInventarioMatPrima
+from .forms import ProductoForm, MateriaPrimaForm, AjusteInventarioForm, AjusteMatPrimaForm
+from django.utils import timezone
+
 
 
 
@@ -257,9 +259,6 @@ def carga_masiva_materia_prima(request):
 
 
 # ------------------------------ AJUSTE PRODUCTO ------------------------------
-from django.utils import timezone
-from .forms import AjusteInventarioForm  # Asegúrate de que esté en las importaciones al inicio
-
 
 @login_required
 def lista_ajustes_producto(request):
@@ -369,15 +368,102 @@ def eliminar_ajuste_producto(request, id_ajuste):
 # ------------------------------ AJUSTE MATERIA PRIMA ------------------------------
 
 @login_required
-def lista_ajustes_materia_prima(request):
-    ajustes = AjusteIventarioMatPrima.objects.all().select_related(
+def lista_ajustes_mat_prima(request):
+    ajustes = AjusteInventarioMatPrima.objects.all().select_related(
         'id_mat_fk_ajuste_mat',
         'id_usuario_fk_ajuste_mat'
     ).order_by('-fecha_ajust_mat')
-    return render(request, 'inventario/ajustes/lista_materia.html', {'ajustes': ajustes})
+    return render(request, 'inventario/ajuste_mat/lista.html', {'ajustes': ajustes})
 
 
 @login_required
-def crear_ajuste_materia_prima(request):
-    # Por implementar según lógica de negocio
-    pass
+def crear_ajuste_mat_prima(request):
+    if request.method == 'POST':
+        id_mat = request.POST.get('materia_prima')
+        materia = get_object_or_404(MateriaPrima, id_materia_prima=id_mat)
+
+        # Pasamos la materia al form para validar el stock disponible decimal
+        form = AjusteMatPrimaForm(request.POST, materia=materia)
+
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    nuevo_ajuste = form.save(commit=False)
+                    nuevo_ajuste.id_mat_fk_ajuste_mat = materia
+                    nuevo_ajuste.id_usuario_fk_ajuste_mat = request.user
+                    nuevo_ajuste.fecha_ajust_mat = timezone.now()
+                    nuevo_ajuste.save()
+
+                    # Actualización de stock (Descontar decimales)
+                    materia.cantidad_exist_mat_prima -= nuevo_ajuste.cantidad_ajustada_mat
+                    materia.save()
+
+                    messages.success(request, f"Ajuste de materia prima registrado correctamente.")
+                    return redirect('lista_ajustes_mat_prima')
+            except Exception as e:
+                messages.error(request, f"Error en la base de datos: {e}")
+        else:
+            for error in form.errors.values():
+                messages.error(request, error)
+            return redirect('lista_ajustes_mat_prima')
+
+    materias = MateriaPrima.objects.filter(estado_materia_prima=True)
+    return render(request, 'inventario/ajuste_mat/crear.html', {'materias': materias})
+
+
+@login_required
+def editar_ajuste_mat_prima(request, id_ajust_mat):
+    ajuste = get_object_or_404(AjusteInventarioMatPrima, id_ajust_mat=id_ajust_mat)
+    materia = ajuste.id_mat_fk_ajuste_mat
+
+    form = AjusteMatPrimaForm(request.POST or None, instance=ajuste, materia=materia)
+
+    if request.method == 'POST':
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    ajuste_editado = form.save(commit=False)
+
+                    # 1. Revertimos el stock anterior (valor decimal)
+                    valor_anterior = AjusteInventarioMatPrima.objects.get(pk=id_ajust_mat).cantidad_ajustada_mat
+                    materia.cantidad_exist_mat_prima += valor_anterior
+
+                    # 2. Aplicamos la nueva resta
+                    materia.cantidad_exist_mat_prima -= ajuste_editado.cantidad_ajustada_mat
+                    materia.save()
+
+                    ajuste_editado.save()
+                    messages.success(request, "Ajuste de materia actualizado y stock recalculado.")
+                    return redirect('lista_ajustes_mat_prima')
+            except Exception as e:
+                messages.error(request, f"Error al editar: {e}")
+        else:
+            for error in form.errors.values():
+                messages.error(request, error)
+
+    return render(request, 'inventario/ajuste_mat/editar.html', {'ajuste': ajuste, 'form': form})
+
+
+@login_required
+def eliminar_ajuste_mat_prima(request, id_ajust_mat):
+    ajuste = get_object_or_404(AjusteInventarioMatPrima, id_ajust_mat=id_ajust_mat)
+
+    if request.method == 'POST':
+        password_confirm = request.POST.get('password_confirm')
+        if not request.user.check_password(password_confirm):
+            messages.error(request, "Acceso denegado. Contraseña incorrecta.")
+            return redirect('lista_ajustes_mat_prima')
+
+        try:
+            with transaction.atomic():
+                materia = ajuste.id_mat_fk_ajuste_mat
+                # Devolvemos la cantidad al stock antes de borrar
+                materia.cantidad_exist_mat_prima += ajuste.cantidad_ajustada_mat
+                materia.save()
+
+                ajuste.delete()
+                messages.success(request, f"Ajuste de insumo #{id_ajust_mat} eliminado.")
+        except Exception as e:
+            messages.error(request, f"Error al eliminar: {e}")
+
+    return redirect('lista_ajustes_mat_prima')

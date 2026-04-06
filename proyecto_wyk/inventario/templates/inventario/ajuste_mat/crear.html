@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Nuevo Ajuste de Materia Prima - WYK{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/dashboard-formularios.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dashboard-tablas.css' %}">
+    <style>
+        .role-selector-group { display: flex; gap: 10px; }
+        .btn-search-item {
+            background: var(--primary-wyk); border: none; color: #1a0a00;
+            width: 50px; border-radius: 8px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; transition: 0.3s;
+        }
+        .stock-info-badge {
+            margin-top: 8px; font-size: 0.85rem; color: #ff8a8a;
+            display: none; font-weight: 600;
+        }
+        .select-wyk { 
+            padding-right: 40px !important; 
+            appearance: none; 
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23f5a623'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E"); 
+            background-repeat: no-repeat; 
+            background-position: right 15px center; 
+            background-size: 20px; 
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="main-form-wrapper fade-in">
+    <div class="form-header-wyk">
+        <div class="header-content-wyk">
+            <h2>Registrar Ajuste de Materia Prima</h2>
+            <p>Reporta mermas o desperdicios de insumos para mantener el inventario al día.</p>
+        </div>
+    </div>
+
+    <div class="form-container-wyk">
+        <form method="post" id="formCrearAjuste">
+            {% csrf_token %}
+
+            <div class="form-group-wyk">
+                <label class="form-label-wyk">Insumo / Materia Prima</label>
+                <div class="role-selector-group">
+                    <input type="text" id="materia_nombre_display" class="input-wyk"
+                           placeholder="Busca y selecciona un insumo..." readonly required>
+                    <input type="hidden" name="materia_prima" id="id_materia_hidden" required>
+                    <button type="button" class="btn-search-item" data-bs-toggle="modal" data-bs-target="#modalMaterias">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+                <div id="stock_badge" class="stock-info-badge">
+                    <i class="fas fa-info-circle"></i> Cantidad disponible: <span id="current_stock_val">0</span>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group-wyk">
+                        <label class="form-label-wyk">Motivo del Ajuste</label>
+                        <select name="tipo_ajust_mat" id="id_tipo_ajust_mat" class="input-wyk select-wyk" required>
+                            <option value="" selected disabled>Seleccione motivo...</option>
+                            <option value="DAÑADO">Dañado / Descompuesto</option>
+                            <option value="ROBO">Robo</option>
+                            <option value="PERDIDA">Pérdida</option>
+                            <option value="CADUCADO">Vencimiento</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-group-wyk">
+                        <label class="form-label-wyk">Cantidad a Descontar</label>
+                        <input type="number" name="cantidad_ajustada_mat" id="id_cantidad" class="input-wyk"
+                               step="0.01" min="0.01" placeholder="Ej: 0.50" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group-wyk">
+                <label class="form-label-wyk">Descripción del Suceso</label>
+                <textarea name="descripcion" id="id_descripcion" class="input-wyk" rows="3"
+                          placeholder="Detalla por qué se realiza este ajuste..." required></textarea>
+            </div>
+
+            <div class="form-actions-wyk">
+                <button type="button" onclick="confirmarRegistroAjuste()" class="btn-save-wyk">
+                    <i class="fas fa-check-circle"></i> Aplicar Ajuste
+                </button>
+                <a href="{% url 'lista_ajustes_materia_prima' %}" class="btn-cancel-wyk">
+                    <i class="fas fa-times"></i> Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade modal-wyk-custom" id="modalMaterias" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header modal-header-wyk">
+                <h5 class="modal-title text-gold"><i class="fas fa-leaf me-2"></i> Seleccionar Insumo Activo</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-search-wrapper">
+                <div class="search-container">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" id="busquedaMateria" class="form-control"
+                               placeholder="Buscar por nombre o ID..." autocomplete="off">
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-body p-0">
+                <div class="table-responsive">
+                    <table class="table-wyk mb-0" id="tablaSelector">
+                        <thead>
+                            <tr>
+                                <th style="width: 80px;" class="text-center">ID</th>
+                                <th>NOMBRE DEL INSUMO</th>
+                                <th class="text-center">STOCK ACTUAL</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for m in materias %}
+                            <tr class="fila-seleccionable" data-id="{{ m.id_materia_prima }}" data-nombre="{{ m.nombre_materia_prima }}" data-stock="{{ m.cantidad_exist_mat_prima }}" style="cursor: pointer;">
+                                <td class="text-center text-gold">{{ m.id_materia_prima }}</td>
+                                <td class="text-white">{{ m.nombre_materia_prima }}</td>
+                                <td class="text-center"><span class="badge-nivel">{{ m.cantidad_exist_mat_prima }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/sweetalert2.all.min.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const swalConfig = { background: '#1a0a00', color: '#fff', confirmButtonColor: '#f5a623', heightAuto: false };
+
+    /* LÓGICA DEL SELECTOR */
+    document.querySelectorAll('#tablaSelector tbody tr').forEach(fila => {
+        fila.addEventListener('click', function() {
+            document.getElementById('id_materia_hidden').value = this.getAttribute('data-id');
+            document.getElementById('materia_nombre_display').value = this.getAttribute('data-nombre');
+            document.getElementById('current_stock_val').innerText = this.getAttribute('data-stock');
+            document.getElementById('stock_badge').style.display = 'block';
+
+            const modalElement = document.getElementById('modalMaterias');
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            modal.hide();
+        });
+    });
+
+    /* BÚSQUEDA EN MODAL */
+    document.getElementById('busquedaMateria').addEventListener('keyup', function() {
+        const term = this.value.toLowerCase();
+        document.querySelectorAll('#tablaSelector tbody tr').forEach(f => {
+            f.style.display = f.textContent.toLowerCase().includes(term) ? "" : "none";
+        });
+    });
+
+    /* VALIDACIÓN Y CONFIRMACIÓN */
+    function confirmarRegistroAjuste() {
+        const materia = document.getElementById('id_materia_hidden').value;
+        const tipo = document.getElementById('id_tipo_ajust_mat').value;
+        const cantidad = parseFloat(document.getElementById('id_cantidad').value);
+        const stockActual = parseFloat(document.getElementById('current_stock_val').innerText);
+        const desc = document.getElementById('id_descripcion').value.trim();
+
+        if (!materia || !tipo || isNaN(cantidad) || !desc) {
+            Swal.fire({ ...swalConfig, icon: 'warning', title: 'Campos incompletos', text: 'Por favor, selecciona un insumo y completa los detalles.' });
+            return;
+        }
+
+        if (cantidad <= 0) {
+            Swal.fire({ ...swalConfig, icon: 'warning', title: 'Valor no válido', text: 'La cantidad debe ser mayor a cero.' });
+            return;
+        }
+
+        if (cantidad > stockActual) {
+            Swal.fire({ ...swalConfig, icon: 'error', title: 'Stock Insuficiente', text: `No puedes retirar ${cantidad}. Solo hay ${stockActual} en inventario.` });
+            return;
+        }
+
+        Swal.fire({
+            ...swalConfig,
+            title: '¿Confirmar Ajuste?',
+            text: `Se descontarán ${cantidad} del insumo seleccionado por "${tipo}".`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, aplicar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('formCrearAjuste').submit();
+            }
+        });
+    }
+</script>
+{% endblock %}

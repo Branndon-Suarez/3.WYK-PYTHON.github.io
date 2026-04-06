@@ -1,6 +1,5 @@
 from django import forms
-from .models import Producto, MateriaPrima, AjusteInventario, AjusteIventarioMatPrima
-
+from .models import Producto, MateriaPrima, AjusteInventario, AjusteInventarioMatPrima
 
 class ProductoForm(forms.ModelForm):
     class Meta:
@@ -93,6 +92,43 @@ class AjusteInventarioForm(forms.ModelForm):
             if nueva_cantidad > stock_base:
                 raise forms.ValidationError(
                     f"Stock insuficiente. El máximo disponible para ajustar es {stock_base}."
+                )
+
+        return nueva_cantidad
+
+
+class AjusteMatPrimaForm(forms.ModelForm):
+    class Meta:
+        model = AjusteInventarioMatPrima
+        fields = ['tipo_ajust_mat', 'cantidad_ajustada_mat']
+        widgets = {
+            'tipo_ajust_mat': forms.Select(attrs={'class': 'input-wyk'}),
+            'cantidad_ajustada_mat': forms.NumberInput(attrs={
+                'class': 'input-wyk',
+                'step': '0.001',
+                'min': '0.001'
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        # Extraemos la materia prima para validaciones de stock decimal
+        self.materia = kwargs.pop('materia', None)
+        super().__init__(*args, **kwargs)
+
+    def clean_cantidad_ajustada_mat(self):
+        nueva_cantidad = self.cleaned_data.get('cantidad_ajustada_mat')
+
+        if self.materia:
+            # Calculamos el stock base (actual)
+            stock_base = self.materia.cantidad_exist_mat_prima
+
+            # Si estamos editando, sumamos el valor anterior para validar el nuevo límite real
+            if self.instance.pk:
+                stock_base += self.instance.cantidad_ajustada_mat
+
+            if nueva_cantidad > stock_base:
+                raise forms.ValidationError(
+                    f"Stock insuficiente. El máximo disponible es {stock_base}."
                 )
 
         return nueva_cantidad
