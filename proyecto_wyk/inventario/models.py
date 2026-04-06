@@ -119,8 +119,17 @@ class AjusteInventarioMatPrima(models.Model):  # Corregido nombre (Inventario)
     id_ajust_mat = models.AutoField(primary_key=True, db_column='id_ajus_mat')
     fecha_ajust_mat = models.DateTimeField(db_column='fecha_ajus_mat')
     tipo_ajust_mat = models.CharField(max_length=20, choices=TipoAjustMat.choices, db_column='tipo_ajus_mat')
+
     # DECIMAL(10,3) coincide con el SQL
     cantidad_ajustada_mat = models.DecimalField(max_digits=10, decimal_places=3, db_column='cantidad_ajustada_mat')
+
+    # CORRECCIÓN: El db_column debe ser descripcion_ajust_mat según tu SQL
+    descripcion = models.CharField(
+        max_length=200,
+        null=True,
+        blank=True,
+        db_column='descripcion_ajust_mat'
+    )
 
     id_mat_fk_ajuste_mat = models.ForeignKey(
         MateriaPrima,

@@ -82,9 +82,9 @@
             </div>
 
             <div class="form-group-wyk">
-                <label class="form-label-wyk">Descripción del Suceso</label>
+                <label class="form-label-wyk">Descripción del Suceso (Opcional)</label>
                 <textarea name="descripcion" id="id_descripcion" class="input-wyk" rows="3"
-                          placeholder="Detalla por qué se realiza este ajuste..." required></textarea>
+                          placeholder="Detalla por qué se realiza este ajuste..."></textarea>
             </div>
 
             <div class="form-actions-wyk">
@@ -189,10 +189,10 @@
         const cantidad = parseFloat(document.getElementById('id_cantidad').value);
         const stockActual = parseFloat(document.getElementById('current_stock_val').innerText);
         const unidad = document.getElementById('current_unit_val').innerText;
-        const desc = document.getElementById('id_descripcion').value.trim();
 
-        if (!materia || !tipo || isNaN(cantidad) || !desc) {
-            Swal.fire({ ...swalConfig, icon: 'warning', title: 'Campos incompletos', text: 'Por favor, selecciona un insumo y completa los detalles.' });
+        // Se quita la validación obligatoria de la descripción aquí
+        if (!materia || !tipo || isNaN(cantidad)) {
+            Swal.fire({ ...swalConfig, icon: 'warning', title: 'Campos incompletos', text: 'Por favor, selecciona un insumo y completa los campos obligatorios.' });
             return;
         }
 

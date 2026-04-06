@@ -100,13 +100,20 @@ class AjusteInventarioForm(forms.ModelForm):
 class AjusteMatPrimaForm(forms.ModelForm):
     class Meta:
         model = AjusteInventarioMatPrima
-        fields = ['tipo_ajust_mat', 'cantidad_ajustada_mat']
+        # AGREGADO: 'descripcion' a la lista de campos
+        fields = ['tipo_ajust_mat', 'cantidad_ajustada_mat', 'descripcion']
         widgets = {
             'tipo_ajust_mat': forms.Select(attrs={'class': 'input-wyk'}),
             'cantidad_ajustada_mat': forms.NumberInput(attrs={
                 'class': 'input-wyk',
                 'step': '0.001',
                 'min': '0.001'
+            }),
+            # AGREGADO: Widget para la descripción con la clase de tus formularios
+            'descripcion': forms.Textarea(attrs={
+                'class': 'input-wyk textarea-wyk',
+                'placeholder': 'Explique el motivo del cambio...',
+                'rows': 3
             }),
         }
 
