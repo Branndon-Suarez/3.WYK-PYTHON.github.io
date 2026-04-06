@@ -1,10 +1,158 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends 'base.html' %}
+{% load static %}
 
-</body>
-</html>
+{% block title %}Editar Ajuste Materia Prima - WYK{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/dashboard-formularios.css' %}">
+    <style>
+        .info-edit { 
+            color: rgba(255,255,255,0.6); 
+            font-size: 0.85rem; 
+            margin-top: 8px; 
+            background: rgba(245, 166, 35, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+            border-left: 3px solid var(--primary-wyk);
+        }
+        .text-gold { color: var(--primary-wyk); font-weight: 700; }
+        
+        .textarea-wyk {
+            min-height: 100px;
+            resize: none;
+        }
+
+        .stock-info-badge {
+            margin-top: 8px;
+            font-size: 0.85rem;
+            color: #ff8a8a;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="main-form-wrapper fade-in">
+    <div class="form-header-wyk">
+        <div class="header-content-wyk">
+            <h2>Editar Ajuste de Materia Prima</h2>
+            <p>Modificando el registro <strong class="text-gold">#{{ ajuste.id_ajust_mat }}</strong> del insumo <strong class="text-gold">{{ ajuste.id_mat_fk_ajuste_mat.nombre_materia_prima }}</strong></p>
+        </div>
+    </div>
+
+    <div class="form-container-wyk">
+        <form method="post" id="formEditarAjusteMat">
+            {% csrf_token %}
+
+            <div class="form-group-wyk">
+                <label class="form-label-wyk">Insumo Asociado</label>
+                <input type="text" class="input-wyk" value="{{ ajuste.id_mat_fk_ajuste_mat.nombre_materia_prima }}" readonly style="opacity: 0.7; cursor: not-allowed;">
+
+                <div class="stock-info-badge">
+                    <i class="fas fa-info-circle"></i> Stock actual en almacén: 
+                    <span id="current_stock_val">{{ ajuste.id_mat_fk_ajuste_mat.cantidad_exist_mat_prima|floatformat:3 }}</span> 
+                    {{ ajuste.id_mat_fk_ajuste_mat.get_presentacion_mat_prima_display|lower }}
+                </div>
+
+                <p class="info-edit">
+                    <i class="fas fa-info-circle"></i> El insumo no puede ser modificado una vez creado el ajuste.
+                </p>
+            </div>
+
+            <div class="form-group-wyk">
+                <label class="form-label-wyk">Motivo del Ajuste</label>
+                <select name="tipo_ajust_mat" id="id_tipo_ajust_mat" class="input-wyk" required>
+                    <option value="" disabled>Seleccione un motivo...</option>
+                    <option value="DAÑADO" {% if ajuste.tipo_ajust_mat == 'DAÑADO' %}selected{% endif %}>Dañado</option>
+                    <option value="ROBO" {% if ajuste.tipo_ajust_mat == 'ROBO' %}selected{% endif %}>Robo</option>
+                    <option value="PERDIDA" {% if ajuste.tipo_ajust_mat == 'PERDIDA' %}selected{% endif %}>Pérdida</option>
+                    <option value="CADUCADO" {% if ajuste.tipo_ajust_mat == 'CADUCADO' %}selected{% endif %}>Caducado</option>
+                </select>
+            </div>
+
+            <div class="form-group-wyk">
+                <label class="form-label-wyk">Cantidad Ajustada</label>
+                <input type="number" name="cantidad_ajustada_mat" id="id_cantidad" class="input-wyk"
+                       value="{{ ajuste.cantidad_ajustada_mat|stringformat:'.3f' }}" min="0.001" step="0.001" required>
+                <p class="info-edit">
+                    <i class="fas fa-info-circle"></i> Al guardar, el sistema restaurará el stock anterior y aplicará esta nueva cantidad.
+                </p>
+            </div>
+
+            <div class="form-group-wyk">
+                <label class="form-label-wyk">Descripción Detallada</label>
+                <textarea name="descripcion" id="id_descripcion" class="input-wyk textarea-wyk"
+                          placeholder="Explique el motivo del cambio..." required>{{ ajuste.descripcion }}</textarea>
+            </div>
+
+            <div class="form-actions-wyk">
+                <button type="button" onclick="confirmarActualizacion()" class="btn-save-wyk">
+                    <i class="fas fa-sync-alt"></i> Guardar Cambios
+                </button>
+                <a href="{% url 'lista_ajustes_mat_prima' %}" class="btn-cancel-wyk">
+                    <i class="fas fa-times"></i> Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/sweetalert2.all.min.js' %}"></script>
+<script>
+    const swalConfig = {
+        background: '#1a0a00',
+        color: '#fff',
+        confirmButtonColor: '#f5a623',
+        heightAuto: false
+    };
+
+    function confirmarActualizacion() {
+        const cantidadInput = document.getElementById('id_cantidad');
+        const nuevaCantidad = parseFloat(cantidadInput.value);
+        const descripcion = document.getElementById('id_descripcion').value.trim();
+        const motivo = document.getElementById('id_tipo_ajust_mat').value;
+        
+        // Stock actual + cantidad que se había descontado originalmente
+        const stockDisponibleReal = parseFloat("{{ ajuste.id_mat_fk_ajuste_mat.cantidad_exist_mat_prima }}") + parseFloat("{{ ajuste.cantidad_ajustada_mat }}");
+
+        if (!motivo || isNaN(nuevaCantidad) || nuevaCantidad <= 0 || !descripcion) {
+            Swal.fire({
+                ...swalConfig,
+                icon: 'warning',
+                title: 'Atención',
+                text: 'Por favor, verifique que todos los campos estén llenos y la cantidad sea válida.'
+            });
+            return;
+        }
+
+        if (nuevaCantidad > stockDisponibleReal) {
+            Swal.fire({
+                ...swalConfig,
+                icon: 'error',
+                title: 'Stock Insuficiente',
+                text: 'La nueva cantidad a descontar supera el stock total disponible del insumo.'
+            });
+            return;
+        }
+
+        Swal.fire({
+            ...swalConfig,
+            title: '¿Actualizar registro?',
+            text: "El inventario de la materia prima se actualizará automáticamente.",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, guardar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('formEditarAjusteMat').submit();
+            }
+        });
+    }
+</script>
+{% endblock %}

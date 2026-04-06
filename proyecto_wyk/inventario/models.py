@@ -1,5 +1,4 @@
 from django.db import models
-
 # Create your models here.
 """CONTROL DE INVENTARIOS (MATERIA_PRIMA, PRODUCTO, AJUSTE_INVENTARIO_MATERIA_PRIMA, AJUSTE_INVENTARIO_PRODUCTO)."""
 
@@ -133,6 +132,20 @@ class AjusteInventarioMatPrima(models.Model):  # Corregido nombre (Inventario)
         on_delete=models.PROTECT,
         db_column='id_usuario_fk_ajuste_mat'
     )
+
+    @property
+    def cantidad_convertida(self):
+        """
+        Multiplica por 1000 si el valor es menor a 1 (para g/ml).
+        Mantiene la lógica de seguridad de tu filtro custom_filters.py.
+        """
+        try:
+            valor = float(self.cantidad_ajustada_mat)
+            if valor < 1:
+                return valor * 1000
+            return valor
+        except (ValueError, TypeError):
+            return 0
 
     class Meta:
         managed = False

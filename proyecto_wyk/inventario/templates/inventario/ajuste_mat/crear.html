@@ -25,6 +25,8 @@
             background-position: right 15px center; 
             background-size: 20px; 
         }
+        /* Estilo para la unidad debajo del stock en el modal */
+        .unit-subtitle { font-size: 0.7rem; color: rgba(255, 255, 255, 0.5); text-transform: lowercase; display: block; margin-top: 2px; }
     </style>
 {% endblock %}
 
@@ -52,7 +54,7 @@
                     </button>
                 </div>
                 <div id="stock_badge" class="stock-info-badge">
-                    <i class="fas fa-info-circle"></i> Cantidad disponible: <span id="current_stock_val">0</span>
+                    <i class="fas fa-info-circle"></i> Cantidad disponible: <span id="current_stock_val">0</span> <span id="current_unit_val"></span>
                 </div>
             </div>
 
@@ -65,7 +67,7 @@
                             <option value="DAÑADO">Dañado / Descompuesto</option>
                             <option value="ROBO">Robo</option>
                             <option value="PERDIDA">Pérdida</option>
-                            <option value="CADUCADO">Vencimiento</option>
+                            <option value="CADUCADO">Caducado</option>
                         </select>
                     </div>
                 </div>
@@ -74,7 +76,7 @@
                     <div class="form-group-wyk">
                         <label class="form-label-wyk">Cantidad a Descontar</label>
                         <input type="number" name="cantidad_ajustada_mat" id="id_cantidad" class="input-wyk"
-                               step="0.01" min="0.01" placeholder="Ej: 0.50" required>
+                               step="0.001" min="0.001" placeholder="Ej: 0.500" required>
                     </div>
                 </div>
             </div>
@@ -89,7 +91,7 @@
                 <button type="button" onclick="confirmarRegistroAjuste()" class="btn-save-wyk">
                     <i class="fas fa-check-circle"></i> Aplicar Ajuste
                 </button>
-                <a href="{% url 'lista_ajustes_materia_prima' %}" class="btn-cancel-wyk">
+                <a href="{% url 'lista_ajustes_mat_prima' %}" class="btn-cancel-wyk">
                     <i class="fas fa-times"></i> Cancelar
                 </a>
             </div>
@@ -127,10 +129,18 @@
                         </thead>
                         <tbody>
                             {% for m in materias %}
-                            <tr class="fila-seleccionable" data-id="{{ m.id_materia_prima }}" data-nombre="{{ m.nombre_materia_prima }}" data-stock="{{ m.cantidad_exist_mat_prima }}" style="cursor: pointer;">
+                            <tr class="fila-seleccionable"
+                                data-id="{{ m.id_materia_prima }}"
+                                data-nombre="{{ m.nombre_materia_prima }}"
+                                data-stock="{{ m.cantidad_exist_mat_prima|floatformat:"-3" }}"
+                                data-unidad="{{ m.presentacion_mat_prima|lower }}"
+                                style="cursor: pointer;">
                                 <td class="text-center text-gold">{{ m.id_materia_prima }}</td>
                                 <td class="text-white">{{ m.nombre_materia_prima }}</td>
-                                <td class="text-center"><span class="badge-nivel">{{ m.cantidad_exist_mat_prima }}</span></td>
+                                <td class="text-center">
+                                    <span class="badge-nivel">{{ m.cantidad_exist_mat_prima|floatformat:"-3" }}</span>
+                                    <span class="unit-subtitle">{{ m.presentacion_mat_prima|lower }}</span>
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -151,9 +161,11 @@
     /* LÓGICA DEL SELECTOR */
     document.querySelectorAll('#tablaSelector tbody tr').forEach(fila => {
         fila.addEventListener('click', function() {
+            const unidad = this.getAttribute('data-unidad');
             document.getElementById('id_materia_hidden').value = this.getAttribute('data-id');
             document.getElementById('materia_nombre_display').value = this.getAttribute('data-nombre');
             document.getElementById('current_stock_val').innerText = this.getAttribute('data-stock');
+            document.getElementById('current_unit_val').innerText = unidad;
             document.getElementById('stock_badge').style.display = 'block';
 
             const modalElement = document.getElementById('modalMaterias');
@@ -176,6 +188,7 @@
         const tipo = document.getElementById('id_tipo_ajust_mat').value;
         const cantidad = parseFloat(document.getElementById('id_cantidad').value);
         const stockActual = parseFloat(document.getElementById('current_stock_val').innerText);
+        const unidad = document.getElementById('current_unit_val').innerText;
         const desc = document.getElementById('id_descripcion').value.trim();
 
         if (!materia || !tipo || isNaN(cantidad) || !desc) {
@@ -189,14 +202,14 @@
         }
 
         if (cantidad > stockActual) {
-            Swal.fire({ ...swalConfig, icon: 'error', title: 'Stock Insuficiente', text: `No puedes retirar ${cantidad}. Solo hay ${stockActual} en inventario.` });
+            Swal.fire({ ...swalConfig, icon: 'error', title: 'Stock Insuficiente', text: `No puedes retirar ${cantidad} ${unidad}. Solo hay ${stockActual} ${unidad} en inventario.` });
             return;
         }
 
         Swal.fire({
             ...swalConfig,
             title: '¿Confirmar Ajuste?',
-            text: `Se descontarán ${cantidad} del insumo seleccionado por "${tipo}".`,
+            text: `Se descontarán ${cantidad} ${unidad} del insumo seleccionado por "${tipo}".`,
             icon: 'question',
             showCancelButton: true,
             confirmButtonText: 'Sí, aplicar',

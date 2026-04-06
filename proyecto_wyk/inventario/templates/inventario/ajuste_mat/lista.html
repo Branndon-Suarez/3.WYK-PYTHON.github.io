@@ -1,6 +1,5 @@
 {% extends 'base.html' %}
 {% load static %}
-
 {% block title %}Historial Ajustes Materia Prima - WYK{% endblock %}
 
 {% block extra_css %}
@@ -8,22 +7,23 @@
     <link rel="stylesheet" href="{% static 'css/dashboard-tablas.css' %}">
 
     <style>
-        .text-detail { 
-            font-size: 0.8rem; 
-            color: rgba(255, 255, 255, 0.6); 
+        .text-detail {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.6);
             display: block;
         }
         .text-detail i { color: var(--primary-color); width: 18px; }
-        
+
         .badge-movimiento {
             background: rgba(255, 138, 138, 0.1);
             color: #ff8a8a;
-            padding: 5px 12px;
+            padding: 4px 10px;
             border-radius: 20px;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: 700;
             border: 1px solid rgba(255, 138, 138, 0.3);
             text-transform: uppercase;
+            white-space: nowrap;
         }
 
         .truncate-text {
@@ -129,7 +129,12 @@
                             <span class="text-detail" style="font-size: 0.7rem;">PRESENTACIÓN: {{ a.id_mat_fk_ajuste_mat.get_presentacion_mat_prima_display }}</span>
                         </td>
                         <td class="text-center">
-                            <span class="badge-movimiento">- {{ a.cantidad_ajustada_mat }}</span>
+                            <div class="badge-movimiento d-flex flex-column align-items-center" style="gap: 1px;">
+                                <span style="font-size: 0.9rem; line-height: 1;">- {{ a.cantidad_convertida|floatformat:0 }}</span>
+                                <span style="font-size: 0.6rem; opacity: 0.8;">
+                                    {% if a.cantidad_ajustada_mat < 1 %} ML / G {% else %} LT / KG {% endif %}
+                                </span>
+                            </div>
                         </td>
                         <td>
                             <span class="text-detail">
