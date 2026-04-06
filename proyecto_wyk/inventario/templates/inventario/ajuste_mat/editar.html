@@ -76,7 +76,7 @@
             <div class="form-group-wyk">
                 <label class="form-label-wyk">Cantidad Ajustada</label>
                 <input type="number" name="cantidad_ajustada_mat" id="id_cantidad" class="input-wyk"
-                       value="{{ ajuste.cantidad_ajustada_mat|stringformat:'.3f' }}" min="0.001" step="0.001" required>
+                       value="{{ ajuste.cantidad_ajustada_mat|floatformat:"-3" }}" min="0.001" step="0.001" required>
                 <p class="info-edit">
                     <i class="fas fa-info-circle"></i> Al guardar, el sistema restaurará el stock anterior y aplicará esta nueva cantidad.
                 </p>
@@ -116,8 +116,7 @@
         const nuevaCantidad = parseFloat(cantidadInput.value);
         const descripcion = document.getElementById('id_descripcion').value.trim();
         const motivo = document.getElementById('id_tipo_ajust_mat').value;
-        
-        // Stock actual + cantidad que se había descontado originalmente
+
         const stockDisponibleReal = parseFloat("{{ ajuste.id_mat_fk_ajuste_mat.cantidad_exist_mat_prima }}") + parseFloat("{{ ajuste.cantidad_ajustada_mat }}");
 
         if (!motivo || isNaN(nuevaCantidad) || nuevaCantidad <= 0 || !descripcion) {
