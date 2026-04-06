@@ -6,6 +6,8 @@
     --accent: #f59e0b;
     --bg-dark: #0b0500;
     --text-white: #ffffff;
+    --danger: #ef4444;
+    --danger-hover: rgba(239, 68, 68, 0.1);
     --sidebar-width: 280px;
     --sidebar-collapsed: 80px;
     --hover-color: rgba(245, 158, 11, 0.1);
@@ -30,7 +32,7 @@ body {
     position: relative;
 }
 
-/* SIDEBAR - ANIMACIÓN DE DESPLAZAMIENTO */
+/* SIDEBAR - CONTENEDOR PRINCIPAL */
 .sidebar {
     width: var(--sidebar-collapsed);
     min-width: var(--sidebar-collapsed);
@@ -53,7 +55,7 @@ body {
     box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
 }
 
-/* CABECERA DEL SIDEBAR */
+/* CABECERA DEL SIDEBAR - FIJA */
 .sidebar-header {
     display: flex;
     align-items: center;
@@ -72,7 +74,6 @@ body {
     align-items: center;
     justify-content: center;
     transition: color 0.3s;
-    /* Ancho total del sidebar colapsado para centrar el icono de hamburguesa */
     width: var(--sidebar-collapsed);
     min-width: var(--sidebar-collapsed);
 }
@@ -100,7 +101,7 @@ body {
     white-space: nowrap;
 }
 
-/* NAVEGACIÓN */
+/* NAVEGACIÓN - SECCIÓN CON SCROLL DORADO */
 .sidebar-nav {
     flex: 1;
     padding: 10px 0;
@@ -110,32 +111,50 @@ body {
     flex-direction: column;
 }
 
+.sidebar-nav::-webkit-scrollbar {
+    width: 5px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+    background: var(--accent);
+    border-radius: 10px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+    background: #d98c08;
+}
+
+/* ITEMS DE NAVEGACIÓN - ANCHO REDUCIDO */
 .nav-item {
     display: flex;
     align-items: center;
-    /* Centrado total cuando está colapsado */
     justify-content: center;
-    height: 50px;
+    height: 48px;
     color: var(--text-white);
     text-decoration: none;
-    border-radius: 12px;
-    /* Margen arriba/abajo. El auto lateral centra el bloque de 60px en los 80px del sidebar */
+    border-radius: 10px;
     margin: 4px auto;
-    width: 60px;
+    /* Reducido de 60px a 50px para ser menos ancho */
+    width: 50px;
     transition: all 0.3s ease;
     position: relative;
+    flex-shrink: 0;
 }
 
-/* Cuando el sidebar está abierto, el ítem se expande y alinea a la izquierda */
 .sidebar.active .nav-item {
     justify-content: flex-start;
-    width: calc(100% - 20px);
-    margin: 4px 10px;
+    /* Ajuste para que se vea más centrado en el modo expandido */
+    width: calc(100% - 30px);
+    margin: 4px 15px;
 }
 
 .nav-item i {
-    /* El contenedor del icono ocupa todo el ancho del recuadro para centrar el icono dentro */
-    min-width: 60px;
+    /* Mantiene el área de click pero el icono se centra */
+    min-width: 50px;
     font-size: 18px;
     display: flex;
     justify-content: center;
@@ -145,7 +164,7 @@ body {
 
 .nav-item span {
     white-space: nowrap;
-    margin-left: 10px;
+    margin-left: 5px;
     transition: opacity 0.2s;
 }
 
@@ -168,37 +187,53 @@ body {
     opacity: 0.6;
     letter-spacing: 1px;
     white-space: nowrap;
+    flex-shrink: 0;
 }
 
-/* PIE DE PÁGINA */
+/* PIE DE PÁGINA - FIJO */
 .sidebar-footer {
     padding: 20px 0;
     border-top: 1px solid rgba(255, 255, 255, 0.05);
+    flex-shrink: 0;
 }
 
 .btn-logout {
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 50px;
+    height: 48px;
     margin: 0 auto;
-    width: 60px;
+    /* Igualamos el ancho a los nav-items */
+    width: 50px;
     color: #ff8a8a;
     text-decoration: none;
-    border-radius: 12px;
-    transition: 0.3s;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
 }
 
 .sidebar.active .btn-logout {
     justify-content: flex-start;
-    width: calc(100% - 20px);
-    margin: 0 10px;
+    width: calc(100% - 30px);
+    margin: 0 15px;
 }
 
 .btn-logout i {
-    min-width: 60px;
+    min-width: 50px;
     display: flex;
     justify-content: center;
+    font-size: 18px;
+}
+
+.btn-logout span {
+    white-space: nowrap;
+    margin-left: 5px;
+}
+
+/* HOVER ROJO ESTILO CUADRADITO */
+.btn-logout:hover {
+    background-color: var(--danger-hover);
+    color: var(--danger);
 }
 
 /* LÓGICA DE VISIBILIDAD */
