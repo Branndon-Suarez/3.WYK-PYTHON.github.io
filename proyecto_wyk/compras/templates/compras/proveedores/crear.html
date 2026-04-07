@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Nuevo Proveedor - WYK{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/dashboard-formularios.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="main-form-wrapper fade-in">
+
+    <div class="form-header-wyk">
+        <div class="header-content-wyk">
+            <h2>Registrar Nuevo Proveedor</h2>
+            <p>Vincula aliados comerciales y marcas al sistema de inventario.</p>
+        </div>
+    </div>
+
+    <div class="form-container-wyk">
+        <form method="post" id="formCrear">
+            {% csrf_token %}
+
+            <div class="form-group-wyk">
+                <label class="form-label-wyk">Cédula o NIT del Proveedor</label>
+                <input type="number" name="cedula_proveedor" id="id_cedula_proveedor" class="input-wyk"
+                       placeholder="Ej: 10203040" value="{{ form.cedula_proveedor.value|default:'' }}" required>
+            </div>
+
+            <div class="form-group-wyk">
+                <label class="form-label-wyk">Lugar de Expedición (Municipio)</label>
+                <select name="lugar_expedicion" id="id_lugar_expedicion" class="input-wyk" required>
+                    <option value="" disabled selected>Cargando municipios...</option>
+                </select>
+            </div>
+
+            <div class="form-group-wyk">
+                <label class="form-label-wyk">Nombre o Razón Social</label>
+                <input type="text" name="nombre_proveedor" id="id_nombre_proveedor" class="input-wyk input-uppercase"
+                       placeholder="Nombre completo" value="{{ form.nombre_proveedor.value|default:'' }}" required>
+            </div>
+
+            <div class="form-group-wyk">
+                <label class="form-label-wyk">Nombre de la Marca / Comercial</label>
+                <input type="text" name="marca" id="id_marca" class="input-wyk input-uppercase"
+                       placeholder="Nombre comercial" value="{{ form.marca.value|default:'' }}" required>
+            </div>
+
+            <div class="form-group-wyk">
+                <label class="form-label-wyk">Correo Electrónico</label>
+                <input type="email" name="email_proveedor" id="id_email_proveedor" class="input-wyk"
+                       placeholder="proveedor@ejemplo.com" value="{{ form.email_proveedor.value|default:'' }}" required>
+            </div>
+
+            <div class="form-group-wyk">
+                <label class="form-label-wyk">Teléfono de Contacto</label>
+                <input type="number" name="tel_proveedor" id="id_tel_proveedor" class="input-wyk"
+                       placeholder="3101234567" value="{{ form.tel_proveedor.value|default:'' }}" required>
+            </div>
+
+            <div class="form-actions-wyk">
+                <button type="button" onclick="confirmarInsertar()" class="btn-save-wyk">
+                    <i class="fas fa-check-circle"></i> Confirmar y Guardar
+                </button>
+                <a href="{% url 'lista_proveedores' %}" class="btn-cancel-wyk">
+                    <i class="fas fa-times"></i> Cancelar Registro
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/sweetalert2.all.min.js' %}"></script>
+<script src="{% static 'js/compras/proveedores.js' %}"></script>
+
+<script>
+    const swalConfig = {
+        background: '#1a0a00',
+        color: '#fff',
+        confirmButtonColor: '#f5a623',
+        heightAuto: false,
+        scrollbarPadding: false
+    };
+
+    // --- 1. CAPTURA DE ERRORES DEL SERVIDOR (Cédula o Nombre duplicado) ---
+    {% if messages %}
+        {% for message in messages %}
+            Swal.fire({
+                ...swalConfig,
+                icon: "{% if 'success' in message.tags %}success{% else %}error{% endif %}",
+                title: "{% if 'success' in message.tags %}¡Listo!{% else %}¡Atención!{% endif %}",
+                text: "{{ message|escapejs }}"
+            });
+        {% endfor %}
+    {% endif %}
+
+    // --- 2. VALIDACIÓN DE CAMPOS Y CONFIRMACIÓN ---
+    function confirmarInsertar() {
+        const cedula = document.getElementById('id_cedula_proveedor').value.trim();
+        const lugar = document.getElementById('id_lugar_expedicion').value;
+        const nombre = document.getElementById('id_nombre_proveedor').value.trim();
+        const marca = document.getElementById('id_marca').value.trim();
+        const email = document.getElementById('id_email_proveedor').value.trim();
+        const tel = document.getElementById('id_tel_proveedor').value.trim();
+
+        // Validación de campos incompletos (Igual que en tu ejemplo de Usuarios)
+        if (!cedula || !lugar || !nombre || !marca || !email || !tel) {
+            Swal.fire({
+                ...swalConfig,
+                icon: 'warning',
+                title: 'Campos incompletos',
+                text: 'Por favor, llena todos los campos obligatorios del proveedor.'
+            });
+            return;
+        }
+
+        // Si todo está lleno, pedir confirmación para guardar
+        Swal.fire({
+            ...swalConfig,
+            title: '¿Registrar nuevo proveedor?',
+            text: `¿Crear registro para "${nombre.toUpperCase()}"?`,
+            icon: 'question',
+            showCancelButton: true,
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Sí, registrar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('formCrear').submit();
+            }
+        });
+    }
+</script>
+{% endblock %}

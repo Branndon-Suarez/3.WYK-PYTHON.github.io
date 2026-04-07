@@ -32,6 +32,8 @@ urlpatterns = [
 
     # Rutas de la aplicación Inventario
     path('inventario/', include('inventario.urls')),
+
+    path('compras/', include('compras.urls')),
 ]
 
 # ESTA PARTE PERMITE QUE DJANGO SIRVA LAS IMÁGENES DE LA CARPETA MEDIA

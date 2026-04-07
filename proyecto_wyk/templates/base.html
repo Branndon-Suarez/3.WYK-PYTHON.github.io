@@ -74,6 +74,13 @@
                     <i class="fa fa-sliders-h"></i>
                     <span>Ajuste Materia Prima</span>
                 </a>
+
+                <div class="nav-section">COMPRAS</div>
+
+                <a href="{% url 'lista_proveedores' %}" class="nav-item {% if 'proveedor' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fa fa-truck"></i>
+                    <span>Proveedores</span>
+                </a>
             </div>
 
             <div class="sidebar-footer">
