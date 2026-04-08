@@ -59,7 +59,40 @@
             color: rgba(255, 255, 255, 0.6);
         }
 
-        /* Estilo para el mensaje de error dentro del Alert (Igual a Ajustes) */
+        /* Estilos para Descripción y Responsable (Igual a Ajustes) */
+        .text-detail {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.6);
+            display: block;
+        }
+        .text-detail i { color: var(--primary-color); width: 18px; }
+
+        .truncate-text {
+            max-width: 200px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: help;
+        }
+
+        .responsable-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            line-height: 1.3;
+        }
+        .responsable-name {
+            color: #fff;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .responsable-role {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
         .swal2-validation-message {
             background-color: transparent !important;
             color: #ff8a8a !important;
@@ -90,7 +123,7 @@
                 <i class="fas fa-filter"></i> Filtros
             </button>
 
-            <button type="button" class="btn-nuevo-header me-3" onclick="generarPDFGlobal('tablaCompras', 'Historial de Compras', [5])">
+            <button type="button" class="btn-nuevo-header me-3" onclick="generarPDFGlobal('tablaCompras', 'Historial de Compras', [7])">
                 <i class="fas fa-file-pdf"></i> PDF
             </button>
 
@@ -103,10 +136,12 @@
             <table class="table-wyk" id="tablaCompras">
                 <thead>
                     <tr>
-                        <th style="width: 80px;" class="text-center">ID</th>
-                        <th>PROVEEDOR / TIPO</th>
+                        <th style="width: 60px;" class="text-center">ID</th>
                         <th style="width: 140px;">FECHA Y HORA</th>
+                        <th>PROVEEDOR / TIPO</th>
                         <th class="text-end">TOTAL</th>
+                        <th>MOTIVO / DETALLE</th>
+                        <th class="text-center">REGISTRADO POR</th>
                         <th class="text-center">ESTADO</th>
                         <th class="text-center">ACCIONES</th>
                     </tr>
@@ -116,17 +151,30 @@
                     <tr data-estado="{{ c.estado_factura_compra|lower }}" data-tipo="{{ c.tipo|slugify }}">
                         <td class="text-center text-gold fw-bold">#{{ c.id_compra }}</td>
                         <td>
-                            <div class="fw-bold text-white">{{ c.id_proveedor_fk_compra.nombre_proveedor }}</div>
-                            <span class="tipo-badge">{{ c.tipo }}</span>
-                        </td>
-                        <td>
                             <div class="datetime-container">
                                 <span class="datetime-date">{{ c.fecha_hora_compra|date:"d/m/Y" }}</span>
                                 <span class="datetime-time">{{ c.fecha_hora_compra|date:"H:i" }}</span>
                             </div>
                         </td>
+                        <td>
+                            <div class="fw-bold text-white">{{ c.id_proveedor_fk_compra.nombre_proveedor }}</div>
+                            <span class="tipo-badge">{{ c.tipo }}</span>
+                        </td>
                         <td class="text-end total-highlight">
-                            $ {{ c.total_compra|floatformat:2 }}
+                            $ {{ c.total_compra|floatformat:0 }}
+                        </td>
+                        <td>
+                            <span class="text-detail">
+                                <div class="truncate-text" title="{{ c.descripcion_compra|default:'Sin detalle' }}">
+                                    <i class="fas fa-comment-alt"></i> {{ c.descripcion_compra|default:"Sin detalle" }}
+                                </div>
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <div class="responsable-wrapper">
+                                <span class="responsable-name">{{ c.id_usuario_fk_compra.nombre }}</span>
+                                <span class="responsable-role">{{ c.id_usuario_fk_compra.rol_fk_usuario.rol|default:"PERSONAL" }}</span>
+                            </div>
                         </td>
                         <td class="text-center">
                             <span class="badge-estado estado-{{ c.estado_factura_compra|lower }}">
@@ -157,7 +205,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="6" class="text-center text-muted py-5">
+                        <td colspan="8" class="text-center text-muted py-5">
                             <i class="fas fa-folder-open d-block mb-2" style="font-size: 2rem; opacity: 0.3;"></i>
                             No se han registrado compras aún.
                         </td>
@@ -290,7 +338,6 @@
                     Swal.showValidationMessage('La contraseña es obligatoria');
                     return false;
                 }
-                // Validación AJAX interna igual que en Ajustes
                 return fetch("{% url 'verificar_password_ajax' %}", {
                     method: 'POST',
                     headers: {

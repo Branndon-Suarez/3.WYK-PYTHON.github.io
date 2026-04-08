@@ -125,8 +125,12 @@ def crear_compra(request):
     materias_primas = MateriaPrima.objects.filter(estado_materia_prima=True)
     productos = Producto.objects.filter(estado_producto=True)
 
+    # Inicializamos las variables para que siempre existan en el contexto (Evita UnboundLocalError)
+    form = CompraForm(request.POST or None)
+    formset_mat = DetalleMateriaPrimaFormSet(request.POST or None, prefix='detallecompramateriaprima_set')
+    formset_prod = DetalleProductoFormSet(request.POST or None, prefix='detallecompraproducto_set')
+
     if request.method == 'POST':
-        form = CompraForm(request.POST)
         tipo_compra = request.POST.get('tipo')
 
         if form.is_valid():
@@ -141,26 +145,24 @@ def crear_compra(request):
                     total_calculado = 0
 
                     if tipo_compra == 'MATERIA PRIMA':
-                        formset = DetalleMateriaPrimaFormSet(request.POST, instance=nueva_compra,
-                                                             prefix='detallecompramateriaprima_set')
-                        if formset.is_valid():
-                            for d in formset.save(commit=False):
+                        formset_mat.instance = nueva_compra
+                        if formset_mat.is_valid():
+                            for d in formset_mat.save(commit=False):
                                 d.estado_det_compra_mat_prima = True
                                 d.save()
                                 total_calculado += d.sub_total_mat_prima_comprada
                         else:
-                            raise ValueError("Error en el detalle de materia prima.")
+                            raise ValueError("Los detalles de la materia prima están incompletos o son inválidos.")
 
                     elif tipo_compra == 'PRODUCTO TERMINADO':
-                        formset = DetalleProductoFormSet(request.POST, instance=nueva_compra,
-                                                         prefix='detallecompraproducto_set')
-                        if formset.is_valid():
-                            for d in formset.save(commit=False):
+                        formset_prod.instance = nueva_compra
+                        if formset_prod.is_valid():
+                            for d in formset_prod.save(commit=False):
                                 d.estado_det_compra_prod = True
                                 d.save()
                                 total_calculado += d.sub_total_prod_comprado
                         else:
-                            raise ValueError("Error en el detalle de productos.")
+                            raise ValueError("Los detalles de los productos están incompletos o son inválidos.")
 
                     nueva_compra.total_compra = total_calculado
                     nueva_compra.save()
@@ -170,11 +172,9 @@ def crear_compra(request):
 
             except Exception as e:
                 messages.error(request, f"Error: {str(e)}")
-    else:
-        form = CompraForm()
-        # Se definen los prefijos para que el JS sepa a qué inputs apuntar
-        formset_mat = DetalleMateriaPrimaFormSet(prefix='detallecompramateriaprima_set')
-        formset_prod = DetalleProductoFormSet(prefix='detallecompraproducto_set')
+        else:
+            # Esta validación activa el SweetAlert si no se selecciona proveedor o tipo
+            messages.error(request, "Campos incompletos: Asegúrate de seleccionar un proveedor y el tipo de compra.")
 
     return render(request, 'compras/compra/crear.html', {
         'form': form,

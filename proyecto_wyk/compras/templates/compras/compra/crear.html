@@ -417,18 +417,40 @@
     }
 
     function confirmarGuardado() {
+        const proveedor = document.getElementById('id_prov_hidden').value;
+        const tipo = document.getElementById('id_tipo_compra').value;
         const total = parseFloat(document.getElementById('id_total_hidden').value);
-        if (!total || total <= 0) {
-            Swal.fire({ ...swalConfig, icon: 'warning', title: 'Factura vacía', text: 'Añade items con subtotal.' });
+
+        // Validar Proveedor y Tipo antes que nada
+        if (!proveedor || !tipo) {
+            Swal.fire({
+                ...swalConfig,
+                icon: 'warning',
+                title: 'Campos Incompletos',
+                text: 'Debes seleccionar un proveedor y el tipo de carga.'
+            });
             return;
         }
+
+        // Validar que la factura tenga items
+        if (!total || total <= 0) {
+            Swal.fire({
+                ...swalConfig,
+                icon: 'warning',
+                title: 'Factura vacía',
+                text: 'Debes añadir al menos un item con un subtotal válido.'
+            });
+            return;
+        }
+
         Swal.fire({
             ...swalConfig,
             title: '¿Registrar Compra?',
             text: "Se registrará la compra en el sistema.",
             icon: 'question',
             showCancelButton: true,
-            confirmButtonText: 'Sí, procesar'
+            confirmButtonText: 'Sí, procesar',
+            cancelButtonText: 'Cancelar'
         }).then((result) => {
             if (result.isConfirmed) document.getElementById('formNuevaCompra').submit();
         });
