@@ -16,7 +16,7 @@ from .forms import ProveedorForm, CompraForm, DetalleMateriaPrimaFormSet, Detall
 @login_required
 def lista_proveedores(request):
     """ Lista todos los proveedores ordenados por nombre """
-    if request.user.rol_fk_usuario.rol not in ['ADMIN', 'OPERARIO']:
+    if request.user.rol_fk_usuario.rol != 'ADMIN':
         messages.error(request, "Acceso denegado. No tienes permisos para gestionar proveedores.")
         return redirect('inicio')
 

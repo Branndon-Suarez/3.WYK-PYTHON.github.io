@@ -61,7 +61,7 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     id_usuario = models.AutoField(primary_key=True, db_column='id_usuario')
     num_doc = models.BigIntegerField(unique=True, db_column='num_doc')
     nombre = models.CharField(max_length=50, db_column='nombre')
-    password = models.CharField(max_length=150, db_column='password_usuario')
+    password = models.CharField(max_length=255, db_column='password_usuario')
     tel_usuario = models.BigIntegerField(db_column='tel_usuario')
     email_usuario = models.EmailField(max_length=50, unique=True, db_column='email_usuario')
     fecha_registro = models.DateTimeField(db_column='fecha_registro', auto_now_add=True)

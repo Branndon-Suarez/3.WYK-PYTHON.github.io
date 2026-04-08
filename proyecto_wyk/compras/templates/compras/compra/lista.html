@@ -42,6 +42,31 @@
             letter-spacing: 1px;
             margin: 15px 0 10px 0;
         }
+
+        /* Estilo unificado para fecha y hora (Igual a Ajustes) */
+        .datetime-container {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.2;
+        }
+        .datetime-date {
+            font-weight: 500;
+            color: #fff;
+        }
+        .datetime-time {
+            font-size: 0.75rem;
+            opacity: 0.7;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* Estilo para el mensaje de error dentro del Alert (Igual a Ajustes) */
+        .swal2-validation-message {
+            background-color: transparent !important;
+            color: #ff8a8a !important;
+            font-weight: 600 !important;
+            border: none !important;
+            margin-top: 15px !important;
+        }
     </style>
 {% endblock %}
 
@@ -78,9 +103,9 @@
             <table class="table-wyk" id="tablaCompras">
                 <thead>
                     <tr>
-                        <th style="width: 80px;"># FACT</th>
+                        <th style="width: 80px;" class="text-center">ID</th>
                         <th>PROVEEDOR / TIPO</th>
-                        <th>FECHA Y HORA</th>
+                        <th style="width: 140px;">FECHA Y HORA</th>
                         <th class="text-end">TOTAL</th>
                         <th class="text-center">ESTADO</th>
                         <th class="text-center">ACCIONES</th>
@@ -89,14 +114,16 @@
                 <tbody>
                     {% for c in compras %}
                     <tr data-estado="{{ c.estado_factura_compra|lower }}" data-tipo="{{ c.tipo|slugify }}">
-                        <td class="fw-bold text-white">{{ c.id_compra }}</td>
+                        <td class="text-center text-gold fw-bold">#{{ c.id_compra }}</td>
                         <td>
                             <div class="fw-bold text-white">{{ c.id_proveedor_fk_compra.nombre_proveedor }}</div>
                             <span class="tipo-badge">{{ c.tipo }}</span>
                         </td>
-                        <td style="font-size: 0.85rem;">
-                            {{ c.fecha_hora_compra|date:"d/m/Y" }}<br>
-                            <span class="text-muted">{{ c.fecha_hora_compra|date:"H:i A" }}</span>
+                        <td>
+                            <div class="datetime-container">
+                                <span class="datetime-date">{{ c.fecha_hora_compra|date:"d/m/Y" }}</span>
+                                <span class="datetime-time">{{ c.fecha_hora_compra|date:"H:i" }}</span>
+                            </div>
                         </td>
                         <td class="text-end total-highlight">
                             $ {{ c.total_compra|floatformat:2 }}
@@ -107,28 +134,33 @@
                             </span>
                         </td>
                         <td class="text-center">
-                            <a href="{% url 'detalle_compra' c.id_compra %}" class="btn-action" title="Ver Detalle">
-                                <i class="fas fa-eye"></i>
-                            </a>
+                            <div class="btn-group-actions">
+                                <a href="{% url 'detalle_compra' c.id_compra %}" class="btn-action" title="Ver Detalle">
+                                    <i class="fas fa-eye"></i>
+                                </a>
 
-                            {% if c.estado_factura_compra == 'PENDIENTE' and request.user.rol_fk_usuario.rol == 'ADMIN' %}
-                            <button type="button" class="btn-action" style="color: #28a745;" 
-                                    onclick="confirmarEstadoCompra('{{ c.id_compra }}', 'pagar')" title="Marcar como Pagada">
-                                <i class="fas fa-check-circle"></i>
-                            </button>
-                            {% endif %}
+                                {% if c.estado_factura_compra == 'PENDIENTE' and request.user.rol_fk_usuario.rol == 'ADMIN' %}
+                                <button type="button" class="btn-action" style="color: #28a745;"
+                                        onclick="confirmarEstadoCompra('{{ c.id_compra }}', 'pagar')" title="Marcar como Pagada">
+                                    <i class="fas fa-check-circle"></i>
+                                </button>
+                                {% endif %}
 
-                            {% if c.estado_factura_compra != 'CANCELADA' and request.user.rol_fk_usuario.rol == 'ADMIN' %}
-                            <button type="button" class="btn-action" style="color: #ff8a8a;" 
-                                    onclick="confirmarEstadoCompra('{{ c.id_compra }}', 'cancelar')" title="Anular Compra">
-                                <i class="fas fa-times-circle"></i>
-                            </button>
-                            {% endif %}
+                                {% if c.estado_factura_compra != 'CANCELADA' and request.user.rol_fk_usuario.rol == 'ADMIN' %}
+                                <button type="button" class="btn-action" style="color: #ff8a8a;"
+                                        onclick="confirmarEstadoCompra('{{ c.id_compra }}', 'cancelar')" title="Anular Compra">
+                                    <i class="fas fa-times-circle"></i>
+                                </button>
+                                {% endif %}
+                            </div>
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="6" class="text-center text-muted py-4">No se han registrado compras aún.</td>
+                        <td colspan="6" class="text-center text-muted py-5">
+                            <i class="fas fa-folder-open d-block mb-2" style="font-size: 2rem; opacity: 0.3;"></i>
+                            No se han registrado compras aún.
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -138,7 +170,7 @@
 </div>
 
 <div class="modal fade" id="filtroComprasModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content modal-content-wyk">
             <div class="modal-header modal-header-wyk">
                 <h5 class="modal-title text-gold"><i class="fas fa-sliders-h"></i> Filtros de Compra</h5>
@@ -153,7 +185,7 @@
                     <div class="chip" data-group="estado" data-filter="cancelada">Canceladas</div>
                 </div>
 
-                <span class="filter-label-group">Tipo de Insumo:</span>
+                <span class="filter-label-group mt-3">Tipo de Insumo:</span>
                 <div class="filter-container">
                     <div class="chip active" data-group="tipo" data-filter="all">Todos</div>
                     <div class="chip" data-group="tipo" data-filter="materia-prima">Materia Prima</div>
@@ -185,6 +217,19 @@
     };
 
     document.addEventListener('DOMContentLoaded', function() {
+        {% if messages %}
+            {% for message in messages %}
+                Swal.fire({
+                    ...swalWykConfig,
+                    icon: '{{ message.tags }}' === 'error' ? 'error' : 'success',
+                    title: '{{ message.tags|upper }}',
+                    text: '{{ message }}',
+                    timer: 3500,
+                    timerProgressBar: true
+                });
+            {% endfor %}
+        {% endif %}
+
         document.querySelectorAll('.chip').forEach(chip => {
             chip.addEventListener('click', function() {
                 document.querySelectorAll(`.chip[data-group="${this.dataset.group}"]`).forEach(c => c.classList.remove('active'));
@@ -218,13 +263,13 @@
         const config = {
             pagar: {
                 title: '¿Confirmar Pago de Factura?',
-                text: `La compra #${id} pasará a estado PAGADA. Ingrese su contraseña:`,
+                text: `La compra #${id} pasará a estado PAGADA y el stock aumentará. Ingrese su contraseña:`,
                 url: "{% url 'pagar_compra_ajax' %}",
                 icon: 'info'
             },
             cancelar: {
                 title: '¿Anular Factura?',
-                text: `Esta acción invalidará la compra #${id}. Ingrese su contraseña:`,
+                text: `Esta acción invalidará la compra #${id}. Si ya fue pagada, el stock se restará automáticamente. Ingrese su contraseña:`,
                 url: "{% url 'cancelar_compra_ajax' %}",
                 icon: 'warning'
             }
@@ -236,13 +281,32 @@
             text: config.text,
             icon: config.icon,
             input: 'password',
-            inputAttributes: { placeholder: 'Contraseña de usuario' },
+            inputAttributes: { placeholder: 'Contraseña de administrador' },
             showCancelButton: true,
             confirmButtonText: 'Confirmar',
             cancelButtonText: 'Volver',
             preConfirm: (password) => {
-                if (!password) { Swal.showValidationMessage('Contraseña requerida'); return false; }
-                return password;
+                if (!password) {
+                    Swal.showValidationMessage('La contraseña es obligatoria');
+                    return false;
+                }
+                // Validación AJAX interna igual que en Ajustes
+                return fetch("{% url 'verificar_password_ajax' %}", {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `password=${encodeURIComponent(password)}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.valid) throw new Error('Contraseña incorrecta');
+                    return password;
+                })
+                .catch(error => {
+                    Swal.showValidationMessage(error.message);
+                });
             }
         }).then((result) => {
             if (result.isConfirmed) {
