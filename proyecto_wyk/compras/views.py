@@ -115,7 +115,7 @@ def cambiar_estado_proveedor_ajax(request):
 
 @login_required
 def lista_compras(request):
-    compras = Compra.objects.all().order_by('-fecha_hora_compra')
+    compras = Compra.objects.all().order_by('id_compra')
     return render(request, 'compras/compra/lista.html', {'compras': compras})
 
 
