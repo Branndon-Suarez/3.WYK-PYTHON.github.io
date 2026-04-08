@@ -1,10 +1,9 @@
-# C:\xampp\htdocs\3.WYK-PYTHON.github.io\proyecto_wyk\compras\forms.py
 from django import forms
-from .models import Proveedor
+from django.forms import inlineformset_factory
+from .models import Proveedor, Compra, DetalleCompraMateriaPrima, DetalleCompraProducto
 
+# --------------------------------- FORMULARIO PROVEEDOR ---------------------------------
 class ProveedorForm(forms.ModelForm):
-    # CAMBIO CLAVE: Usamos CharField en lugar de ChoiceField para que Django
-    # acepte el texto dinámico que viene de la API sin dar error de "opción no válida".
     lugar_expedicion = forms.CharField(
         widget=forms.Select(attrs={
             'class': 'input-wyk',
@@ -16,8 +15,6 @@ class ProveedorForm(forms.ModelForm):
 
     class Meta:
         model = Proveedor
-        # No incluimos estado_proveedor ni id_usuario_fk_proveedor
-        # ya que se gestionan automáticamente en la vista
         fields = [
             'cedula_proveedor',
             'lugar_expedicion',
@@ -56,11 +53,8 @@ class ProveedorForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(ProveedorForm, self).__init__(*args, **kwargs)
-        # Si estamos editando, nos aseguramos de que el campo tenga el valor actual
         if self.instance and self.instance.pk:
             self.fields['lugar_expedicion'].initial = self.instance.lugar_expedicion
-
-    # ------------------------------ VALIDACIONES DE UNICIDAD ------------------------------
 
     def clean_cedula_proveedor(self):
         cedula = self.cleaned_data.get('cedula_proveedor')
@@ -70,7 +64,6 @@ class ProveedorForm(forms.ModelForm):
 
     def clean_nombre_proveedor(self):
         nombre = self.cleaned_data.get('nombre_proveedor').strip().upper()
-        # NUEVA VALIDACIÓN: Verifica si el nombre ya existe
         if Proveedor.objects.filter(nombre_proveedor=nombre).exclude(pk=self.instance.pk).exists():
             raise forms.ValidationError(f"El proveedor '{nombre}' ya existe en el sistema.")
         return nombre
@@ -86,3 +79,82 @@ class ProveedorForm(forms.ModelForm):
         if Proveedor.objects.filter(email_proveedor=email).exclude(pk=self.instance.pk).exists():
             raise forms.ValidationError(f"El correo '{email}' ya está registrado.")
         return email
+
+
+# --------------------------------- FORMULARIO COMPRA ---------------------------------
+class CompraForm(forms.ModelForm):
+    class Meta:
+        model = Compra
+        fields = [
+            'id_proveedor_fk_compra',
+            'tipo',
+            'estado_factura_compra',
+            'descripcion_compra'
+        ]
+        widgets = {
+            'id_proveedor_fk_compra': forms.Select(attrs={'class': 'input-wyk', 'required': True}),
+            'tipo': forms.Select(attrs={'class': 'input-wyk', 'id': 'id_tipo_compra', 'required': True}),
+            # Agregamos readonly o bloqueado vía HTML para asegurar que siempre empiece en PENDIENTE
+            'estado_factura_compra': forms.Select(attrs={'class': 'input-wyk', 'id': 'id_estado_factura'}),
+            'descripcion_compra': forms.Textarea(attrs={
+                'class': 'input-wyk',
+                'rows': 2,
+                'placeholder': 'Opcional: Detalles adicionales de la factura...'
+            }),
+        }
+
+
+# --------------------------------- FORMSETS DE DETALLE ---------------------------------
+
+# Detalle para Materia Prima
+DetalleMateriaPrimaFormSet = inlineformset_factory(
+    Compra,
+    DetalleCompraMateriaPrima,
+    fields=[
+        'id_mat_prima_fk_det_compra_mat_prima',
+        'cantidad_mat_prima_comprada',
+        'sub_total_mat_prima_comprada'
+    ],
+    widgets={
+        'id_mat_prima_fk_det_compra_mat_prima': forms.Select(attrs={'class': 'input-wyk select-item', 'required': True}),
+        'cantidad_mat_prima_comprada': forms.NumberInput(attrs={
+            'class': 'input-wyk cantidad-input',
+            'step': '0.001',
+            'min': '0.001',
+            'required': True
+        }),
+        'sub_total_mat_prima_comprada': forms.NumberInput(attrs={
+            'class': 'input-wyk subtotal-input',
+            'readonly': 'readonly', # Generalmente calculado por JS
+            'required': True
+        }),
+    },
+    extra=0, # Cambiado a 0 para que no aparezca una fila vacía innecesaria si usas JS para añadir filas
+    can_delete=True
+)
+
+# Detalle para Producto Terminado
+DetalleProductoFormSet = inlineformset_factory(
+    Compra,
+    DetalleCompraProducto,
+    fields=[
+        'id_prod_fk_det_compra_prod',
+        'cantidad_prod_comprado',
+        'sub_total_prod_comprado'
+    ],
+    widgets={
+        'id_prod_fk_det_compra_prod': forms.Select(attrs={'class': 'input-wyk select-item', 'required': True}),
+        'cantidad_prod_comprado': forms.NumberInput(attrs={
+            'class': 'input-wyk cantidad-input',
+            'min': '1',
+            'required': True
+        }),
+        'sub_total_prod_comprado': forms.NumberInput(attrs={
+            'class': 'input-wyk subtotal-input',
+            'readonly': 'readonly',
+            'required': True
+        }),
+    },
+    extra=0,
+    can_delete=True
+)

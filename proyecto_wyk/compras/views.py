@@ -1,13 +1,14 @@
-# C:\xampp\htdocs\3.WYK-PYTHON.github.io\proyecto_wyk\compras\views.py
-
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.db import transaction
 from django.db.models import ProtectedError
 from django.http import JsonResponse
+from django.utils import timezone
 import json
-from .models import Proveedor
-from .forms import ProveedorForm
+from .models import Proveedor, Compra, DetalleCompraMateriaPrima, DetalleCompraProducto
+from inventario.models import MateriaPrima, Producto
+from .forms import ProveedorForm, CompraForm, DetalleMateriaPrimaFormSet, DetalleProductoFormSet
 
 
 # ------------------------------ GESTIÓN DE PROVEEDORES (CRUD) ------------------------------
@@ -39,11 +40,6 @@ def crear_proveedor(request):
             nuevo_proveedor.save()
             messages.success(request, f"Proveedor '{nuevo_proveedor.nombre_proveedor}' creado correctamente.")
             return redirect('lista_proveedores')
-        else:
-            # Captura errores de validación (como nombre duplicado definido en el form)
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(request, f"{error}")
     else:
         form = ProveedorForm()
 
@@ -54,7 +50,7 @@ def crear_proveedor(request):
 def editar_proveedor(request, cedula_proveedor):
     """ Edita la información de un proveedor existente """
     if request.user.rol_fk_usuario.rol != 'ADMIN':
-        messages.error(request, "Acceso denegado. No tienes permisos para editar proveedores.")
+        messages.error(request, "Acceso denegado.")
         return redirect('lista_proveedores')
 
     proveedor = get_object_or_404(Proveedor, cedula_proveedor=cedula_proveedor)
@@ -63,44 +59,33 @@ def editar_proveedor(request, cedula_proveedor):
         form = ProveedorForm(request.POST, instance=proveedor)
         if form.is_valid():
             form.save()
-            messages.success(request, f"Proveedor '{proveedor.nombre_proveedor}' actualizado correctamente.")
+            messages.success(request, f"Proveedor '{proveedor.nombre_proveedor}' actualizado.")
             return redirect('lista_proveedores')
-        else:
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(request, f"{error}")
     else:
         form = ProveedorForm(instance=proveedor)
 
-    return render(request, 'compras/proveedores/editar.html', {
-        'proveedor': proveedor,
-        'form': form
-    })
+    return render(request, 'compras/proveedores/editar.html', {'proveedor': proveedor, 'form': form})
 
 
 @login_required
 def eliminar_proveedor(request, cedula_proveedor):
     """ Elimina un proveedor si no tiene compras asociadas """
     if request.user.rol_fk_usuario.rol != 'ADMIN':
-        messages.error(request, "Acceso denegado.")
         return redirect('lista_proveedores')
 
     proveedor = get_object_or_404(Proveedor, cedula_proveedor=cedula_proveedor)
 
     if request.method == 'POST':
         password_confirm = request.POST.get('password_confirm')
-
         if not request.user.check_password(password_confirm):
-            messages.error(request, "Acceso denegado. Contraseña incorrecta. Acción cancelada.")
+            messages.error(request, "Contraseña incorrecta. Acción cancelada.")
             return redirect('lista_proveedores')
 
         try:
-            nombre_eliminado = proveedor.nombre_proveedor
             proveedor.delete()
-            messages.success(request, f"Proveedor '{nombre_eliminado}' eliminado definitivamente.")
+            messages.success(request, "Proveedor eliminado definitivamente.")
         except ProtectedError:
-            messages.error(request,
-                           f"Acceso denegado. '{proveedor.nombre_proveedor}' tiene registros de compras asociados.")
+            messages.error(request, "No se puede eliminar: tiene facturas asociadas.")
 
     return redirect('lista_proveedores')
 
@@ -109,30 +94,163 @@ def eliminar_proveedor(request, cedula_proveedor):
 
 @login_required
 def cambiar_estado_proveedor_ajax(request):
-    """ Activa o inactiva un proveedor mediante AJAX """
     if request.method == 'POST' and request.headers.get('x-requested-with') == 'XMLHttpRequest':
         if request.user.rol_fk_usuario.rol != 'ADMIN':
             return JsonResponse({'success': False, 'message': 'Acceso denegado.'})
 
+        data = json.loads(request.body)
+        if not request.user.check_password(data.get('password')):
+            return JsonResponse({'success': False, 'message': 'Contraseña incorrecta.'})
+
+        proveedor = get_object_or_404(Proveedor, cedula_proveedor=data.get('cedula_proveedor'))
+        proveedor.estado_proveedor = data.get('nuevo_estado')
+        proveedor.save()
+
+        return JsonResponse({'success': True, 'message': 'Estado actualizado.'})
+
+    return JsonResponse({'success': False}, status=400)
+
+
+# ------------------------------ GESTIÓN DE COMPRAS ------------------------------
+
+@login_required
+def lista_compras(request):
+    compras = Compra.objects.all().order_by('-fecha_hora_compra')
+    return render(request, 'compras/compra/lista.html', {'compras': compras})
+
+
+@login_required
+def crear_compra(request):
+    proveedores = Proveedor.objects.filter(estado_proveedor=True)
+    materias_primas = MateriaPrima.objects.filter(estado_materia_prima=True)
+    productos = Producto.objects.filter(estado_producto=True)
+
+    if request.method == 'POST':
+        form = CompraForm(request.POST)
+        tipo_compra = request.POST.get('tipo')
+
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    nueva_compra = form.save(commit=False)
+                    nueva_compra.id_usuario_fk_compra = request.user
+                    nueva_compra.fecha_hora_compra = timezone.now()
+                    nueva_compra.total_compra = 0
+                    nueva_compra.save()
+
+                    total_calculado = 0
+
+                    if tipo_compra == 'MATERIA PRIMA':
+                        formset = DetalleMateriaPrimaFormSet(request.POST, instance=nueva_compra,
+                                                             prefix='detallecompramateriaprima_set')
+                        if formset.is_valid():
+                            for d in formset.save(commit=False):
+                                d.estado_det_compra_mat_prima = True
+                                d.save()
+                                total_calculado += d.sub_total_mat_prima_comprada
+                        else:
+                            raise ValueError("Error en el detalle de materia prima.")
+
+                    elif tipo_compra == 'PRODUCTO TERMINADO':
+                        formset = DetalleProductoFormSet(request.POST, instance=nueva_compra,
+                                                         prefix='detallecompraproducto_set')
+                        if formset.is_valid():
+                            for d in formset.save(commit=False):
+                                d.estado_det_compra_prod = True
+                                d.save()
+                                total_calculado += d.sub_total_prod_comprado
+                        else:
+                            raise ValueError("Error en el detalle de productos.")
+
+                    nueva_compra.total_compra = total_calculado
+                    nueva_compra.save()
+
+                    messages.success(request, f"Compra #{nueva_compra.id_compra} registrada correctamente.")
+                    return redirect('lista_compras')
+
+            except Exception as e:
+                messages.error(request, f"Error: {str(e)}")
+    else:
+        form = CompraForm()
+        # Se definen los prefijos para que el JS sepa a qué inputs apuntar
+        formset_mat = DetalleMateriaPrimaFormSet(prefix='detallecompramateriaprima_set')
+        formset_prod = DetalleProductoFormSet(prefix='detallecompraproducto_set')
+
+    return render(request, 'compras/compra/crear.html', {
+        'form': form,
+        'formset_mat': formset_mat,
+        'formset_prod': formset_prod,
+        'proveedores': proveedores,
+        'materias_primas': materias_primas,
+        'productos': productos
+    })
+
+
+@login_required
+def detalle_compra(request, id_compra):
+    compra = get_object_or_404(Compra, id_compra=id_compra)
+    detalles_mat = DetalleCompraMateriaPrima.objects.filter(
+        id_compra_fk_det_compra_mat_prima=compra) if compra.tipo == 'MATERIA PRIMA' else None
+    detalles_prod = DetalleCompraProducto.objects.filter(
+        id_compra_fk_det_compra_prod=compra) if compra.tipo == 'PRODUCTO TERMINADO' else None
+
+    return render(request, 'compras/compra/detalle.html', {
+        'compra': compra,
+        'detalles_mat': detalles_mat,
+        'detalles_prod': detalles_prod
+    })
+
+
+@login_required
+def pagar_compra_ajax(request):
+    if request.method == 'POST' and request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        if request.user.rol_fk_usuario.rol != 'ADMIN':
+            return JsonResponse({'success': False, 'message': 'Solo administradores.'})
+
+        data = json.loads(request.body)
+        if not request.user.check_password(data.get('password')):
+            return JsonResponse({'success': False, 'message': 'Contraseña incorrecta.'})
+
         try:
-            data = json.loads(request.body)
-            cedula = data.get('cedula_proveedor')
-            nuevo_estado = data.get('nuevo_estado')
-            password = data.get('password')
+            with transaction.atomic():
+                compra = get_object_or_404(Compra, id_compra=data.get('id_compra'))
+                if compra.estado_factura_compra != 'PENDIENTE':
+                    return JsonResponse({'success': False, 'message': 'Estado inválido.'})
 
-            if not request.user.check_password(password):
-                return JsonResponse({'success': False, 'message': 'Acceso denegado. Contraseña incorrecta.'})
+                if compra.tipo == 'MATERIA PRIMA':
+                    for d in DetalleCompraMateriaPrima.objects.filter(id_compra_fk_det_compra_mat_prima=compra):
+                        insumo = d.id_mat_prima_fk_det_compra_mat_prima
+                        insumo.cantidad_exist_mat_prima += d.cantidad_mat_prima_comprada
+                        insumo.save()
+                else:
+                    for d in DetalleCompraProducto.objects.filter(id_compra_fk_det_compra_prod=compra):
+                        prod = d.id_prod_fk_det_compra_prod
+                        prod.cant_exist_producto += d.cantidad_prod_comprado
+                        prod.save()
 
-            proveedor = Proveedor.objects.get(cedula_proveedor=cedula)
-            proveedor.estado_proveedor = nuevo_estado
-            proveedor.save()
+                compra.estado_factura_compra = 'PAGADA'
+                compra.save()
 
-            accion = "activado" if nuevo_estado else "inactivado"
-            return JsonResponse({
-                'success': True,
-                'message': f"Proveedor '{proveedor.nombre_proveedor}' {accion} correctamente."
-            })
+            return JsonResponse({'success': True, 'message': 'Pago confirmado y stock actualizado.'})
         except Exception as e:
             return JsonResponse({'success': False, 'message': str(e)})
 
-    return JsonResponse({'success': False, 'message': 'Acceso no autorizado.'}, status=400)
+    return JsonResponse({'success': False}, status=400)
+
+
+@login_required
+def cancelar_compra_ajax(request):
+    if request.method == 'POST' and request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        if request.user.rol_fk_usuario.rol != 'ADMIN':
+            return JsonResponse({'success': False, 'message': 'Solo administradores.'})
+
+        data = json.loads(request.body)
+        if not request.user.check_password(data.get('password')):
+            return JsonResponse({'success': False, 'message': 'Contraseña incorrecta.'})
+
+        compra = get_object_or_404(Compra, id_compra=data.get('id_compra'))
+        compra.estado_factura_compra = 'CANCELADA'
+        compra.save()
+        return JsonResponse({'success': True, 'message': 'Compra anulada.'})
+
+    return JsonResponse({'success': False}, status=400)

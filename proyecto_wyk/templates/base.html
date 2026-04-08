@@ -81,6 +81,11 @@
                     <i class="fa fa-truck"></i>
                     <span>Proveedores</span>
                 </a>
+
+                <a href="{% url 'lista_compras' %}" class="nav-item {% if 'compra' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fa fa-shopping-cart"></i>
+                    <span>Historial Compras</span>
+                </a>
             </div>
 
             <div class="sidebar-footer">
