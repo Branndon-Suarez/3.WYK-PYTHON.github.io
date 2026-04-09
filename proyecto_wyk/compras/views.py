@@ -15,7 +15,7 @@ from .forms import ProveedorForm, CompraForm, DetalleMateriaPrimaFormSet, Detall
 
 @login_required
 def lista_proveedores(request):
-    """ Lista todos los proveedores ordenados por nombre """
+    """ Lista todos los proveedores ordenados por nombre - Solo ADMIN """
     if request.user.rol_fk_usuario.rol != 'ADMIN':
         messages.error(request, "Acceso denegado. No tienes permisos para gestionar proveedores.")
         return redirect('inicio')
@@ -26,7 +26,7 @@ def lista_proveedores(request):
 
 @login_required
 def crear_proveedor(request):
-    """ Crea un nuevo proveedor vinculándolo al usuario actual """
+    """ Crea un nuevo proveedor vinculándolo al usuario actual - Solo ADMIN """
     if request.user.rol_fk_usuario.rol != 'ADMIN':
         messages.error(request, "Acceso denegado. Solo administradores pueden crear proveedores.")
         return redirect('lista_proveedores')
@@ -48,7 +48,7 @@ def crear_proveedor(request):
 
 @login_required
 def editar_proveedor(request, cedula_proveedor):
-    """ Edita la información de un proveedor existente """
+    """ Edita la información de un proveedor existente - Solo ADMIN """
     if request.user.rol_fk_usuario.rol != 'ADMIN':
         messages.error(request, "Acceso denegado.")
         return redirect('lista_proveedores')
@@ -69,8 +69,9 @@ def editar_proveedor(request, cedula_proveedor):
 
 @login_required
 def eliminar_proveedor(request, cedula_proveedor):
-    """ Elimina un proveedor si no tiene compras asociadas """
+    """ Elimina un proveedor si no tiene compras asociadas - Solo ADMIN """
     if request.user.rol_fk_usuario.rol != 'ADMIN':
+        messages.error(request, "Acceso denegado para eliminar proveedores.")
         return redirect('lista_proveedores')
 
     proveedor = get_object_or_404(Proveedor, cedula_proveedor=cedula_proveedor)
@@ -111,16 +112,26 @@ def cambiar_estado_proveedor_ajax(request):
     return JsonResponse({'success': False}, status=400)
 
 
-# ------------------------------ GESTIÓN DE COMPRAS ------------------------------
+# ------------------------------ GESTIÓN DE COMPRAS (CRUD - SOLO ADMIN) ------------------------------
 
 @login_required
 def lista_compras(request):
+    """ Lista historial de compras - Solo ADMIN """
+    if request.user.rol_fk_usuario.rol != 'ADMIN':
+        messages.error(request, "Acceso denegado. No tienes permisos para ver las compras.")
+        return redirect('inicio')
+
     compras = Compra.objects.all().order_by('id_compra')
     return render(request, 'compras/compra/lista.html', {'compras': compras})
 
 
 @login_required
 def crear_compra(request):
+    """ Registra una nueva compra - Solo ADMIN """
+    if request.user.rol_fk_usuario.rol != 'ADMIN':
+        messages.error(request, "Acceso denegado. No tienes permisos para registrar compras.")
+        return redirect('inicio')
+
     proveedores = Proveedor.objects.filter(estado_proveedor=True)
     materias_primas = MateriaPrima.objects.filter(estado_materia_prima=True)
     productos = Producto.objects.filter(estado_producto=True)
@@ -186,6 +197,11 @@ def crear_compra(request):
 
 @login_required
 def detalle_compra(request, id_compra):
+    """ Detalle de una compra específica - Solo ADMIN """
+    if request.user.rol_fk_usuario.rol != 'ADMIN':
+        messages.error(request, "Acceso denegado.")
+        return redirect('inicio')
+
     compra = get_object_or_404(Compra, id_compra=id_compra)
     detalles_mat = DetalleCompraMateriaPrima.objects.filter(
         id_compra_fk_det_compra_mat_prima=compra) if compra.tipo == 'MATERIA PRIMA' else None
@@ -227,7 +243,7 @@ def pagar_compra_ajax(request):
                         prod.save()
 
                 compra.estado_factura_compra = 'PAGADA'
-                compra.fecha_cambio_estado = timezone.now()  # Registro de fecha y hora del pago
+                compra.fecha_cambio_estado = timezone.now()
                 compra.save()
 
             return JsonResponse({'success': True, 'message': 'Pago confirmado y stock actualizado.'})
@@ -251,7 +267,6 @@ def cancelar_compra_ajax(request):
             with transaction.atomic():
                 compra = get_object_or_404(Compra, id_compra=data.get('id_compra'))
 
-                # Si la compra ya estaba pagada, revertimos el stock antes de cancelar
                 if compra.estado_factura_compra == 'PAGADA':
                     if compra.tipo == 'MATERIA PRIMA':
                         for d in DetalleCompraMateriaPrima.objects.filter(id_compra_fk_det_compra_mat_prima=compra):
@@ -265,7 +280,7 @@ def cancelar_compra_ajax(request):
                             prod.save()
 
                 compra.estado_factura_compra = 'CANCELADA'
-                compra.fecha_cambio_estado = timezone.now()  # Registro de fecha y hora de la cancelación
+                compra.fecha_cambio_estado = timezone.now()
                 compra.save()
 
             return JsonResponse({'success': True, 'message': 'Compra anulada y stock revertido.'})

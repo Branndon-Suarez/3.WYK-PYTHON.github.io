@@ -13,23 +13,28 @@ from .forms import ProductoForm, MateriaPrimaForm, AjusteInventarioForm, AjusteM
 from django.utils import timezone
 
 
-
-
 # ------------------------------ PRODUCTOS ------------------------------
 
 @login_required
 def lista_productos(request):
+    if request.user.rol_fk_usuario.rol != 'ADMIN':
+        messages.error(request, "Acceso denegado. Solo administradores pueden ver el inventario.")
+        return redirect('inicio')
+
     productos = Producto.objects.all().order_by('id_producto')
     return render(request, 'inventario/producto/lista.html', {'productos': productos})
 
 
 @login_required
 def crear_producto(request):
+    if request.user.rol_fk_usuario.rol != 'ADMIN':
+        messages.error(request, "Acceso denegado.")
+        return redirect('lista_productos')
+
     form = ProductoForm(request.POST or None, request.FILES or None)
     if request.method == 'POST':
         if form.is_valid():
             nuevo_producto = form.save(commit=False)
-            # Asignación del usuario logueado
             nuevo_producto.id_usuario_fk_producto = request.user
             nuevo_producto.save()
             messages.success(request, f"Producto '{nuevo_producto.nombre_producto}' creado correctamente.")
@@ -44,6 +49,10 @@ def crear_producto(request):
 
 @login_required
 def carga_masiva_productos(request):
+    if request.user.rol_fk_usuario.rol != 'ADMIN':
+        messages.error(request, "Acceso denegado.")
+        return redirect('lista_productos')
+
     if request.method == 'POST':
         csv_file = request.FILES.get('archivo_csv')
 
@@ -58,7 +67,6 @@ def carga_masiva_productos(request):
 
             cont_creados = 0
             for row in csv.reader(io_string, delimiter=',', quotechar='"'):
-                # Columnas: 0:ID, 1:Nombre, 2:Valor, 3:Stock, 4:Vencimiento, 5:Tipo, 6:Descripción
                 Producto.objects.create(
                     id_producto=row[0],
                     nombre_producto=row[1].upper(),
@@ -81,6 +89,10 @@ def carga_masiva_productos(request):
 
 @login_required
 def editar_producto(request, id_producto):
+    if request.user.rol_fk_usuario.rol != 'ADMIN':
+        messages.error(request, "Acceso denegado.")
+        return redirect('lista_productos')
+
     producto = get_object_or_404(Producto, id_producto=id_producto)
     form = ProductoForm(request.POST or None, request.FILES or None, instance=producto)
 
@@ -102,6 +114,10 @@ def editar_producto(request, id_producto):
 
 @login_required
 def eliminar_producto(request, id_producto):
+    if request.user.rol_fk_usuario.rol != 'ADMIN':
+        messages.error(request, "Acceso denegado.")
+        return redirect('lista_productos')
+
     producto = get_object_or_404(Producto, id_producto=id_producto)
 
     if request.method == 'POST':
@@ -124,6 +140,9 @@ def eliminar_producto(request, id_producto):
 @login_required
 def cambiar_estado_producto_ajax(request):
     if request.method == 'POST' and request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        if request.user.rol_fk_usuario.rol != 'ADMIN':
+            return JsonResponse({'success': False, 'message': 'Solo administradores.'})
+
         try:
             data = json.loads(request.body)
             id_prod = data.get('id_producto')
@@ -149,12 +168,20 @@ def cambiar_estado_producto_ajax(request):
 
 @login_required
 def lista_materia_prima(request):
+    if request.user.rol_fk_usuario.rol != 'ADMIN':
+        messages.error(request, "Acceso denegado.")
+        return redirect('inicio')
+
     materias = MateriaPrima.objects.all().order_by('id_materia_prima')
     return render(request, 'inventario/materia_prima/lista.html', {'materias': materias})
 
 
 @login_required
 def crear_materia_prima(request):
+    if request.user.rol_fk_usuario.rol != 'ADMIN':
+        messages.error(request, "Acceso denegado.")
+        return redirect('lista_materia_prima')
+
     form = MateriaPrimaForm(request.POST or None)
     if request.method == 'POST':
         if form.is_valid():
@@ -173,6 +200,10 @@ def crear_materia_prima(request):
 
 @login_required
 def editar_materia_prima(request, id_materia_prima):
+    if request.user.rol_fk_usuario.rol != 'ADMIN':
+        messages.error(request, "Acceso denegado.")
+        return redirect('lista_materia_prima')
+
     materia = get_object_or_404(MateriaPrima, id_materia_prima=id_materia_prima)
     form = MateriaPrimaForm(request.POST or None, instance=materia)
     if request.method == 'POST':
@@ -190,6 +221,10 @@ def editar_materia_prima(request, id_materia_prima):
 
 @login_required
 def eliminar_materia_prima(request, id_materia_prima):
+    if request.user.rol_fk_usuario.rol != 'ADMIN':
+        messages.error(request, "Acceso denegado.")
+        return redirect('lista_materia_prima')
+
     materia = get_object_or_404(MateriaPrima, id_materia_prima=id_materia_prima)
     if request.method == 'POST':
         password_confirm = request.POST.get('password_confirm')
@@ -209,6 +244,9 @@ def eliminar_materia_prima(request, id_materia_prima):
 @login_required
 def cambiar_estado_materia_prima_ajax(request):
     if request.method == 'POST' and request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        if request.user.rol_fk_usuario.rol != 'ADMIN':
+            return JsonResponse({'success': False, 'message': 'Acceso denegado.'})
+
         try:
             data = json.loads(request.body)
             materia = MateriaPrima.objects.get(id_materia_prima=data.get('id_materia_prima'))
@@ -226,6 +264,10 @@ def cambiar_estado_materia_prima_ajax(request):
 
 @login_required
 def carga_masiva_materia_prima(request):
+    if request.user.rol_fk_usuario.rol != 'ADMIN':
+        messages.error(request, "Acceso denegado.")
+        return redirect('lista_materia_prima')
+
     if request.method == 'POST':
         csv_file = request.FILES.get('archivo_csv')
 
@@ -262,6 +304,10 @@ def carga_masiva_materia_prima(request):
 
 @login_required
 def lista_ajustes_producto(request):
+    if request.user.rol_fk_usuario.rol != 'ADMIN':
+        messages.error(request, "Acceso denegado.")
+        return redirect('inicio')
+
     ajustes = AjusteInventario.objects.all().select_related(
         'id_prod_fk_ajuste',
         'id_usuario_fk_ajuste'
@@ -271,11 +317,14 @@ def lista_ajustes_producto(request):
 
 @login_required
 def crear_ajuste_producto(request):
+    if request.user.rol_fk_usuario.rol != 'ADMIN':
+        messages.error(request, "Acceso denegado.")
+        return redirect('lista_ajustes_producto')
+
     if request.method == 'POST':
         id_prod = request.POST.get('producto')
         producto = get_object_or_404(Producto, id_producto=id_prod)
 
-        # Pasamos el producto al form para validar el stock disponible
         form = AjusteInventarioForm(request.POST, producto=producto)
 
         if form.is_valid():
@@ -287,7 +336,6 @@ def crear_ajuste_producto(request):
                     nuevo_ajuste.fecha_ajuste = timezone.now()
                     nuevo_ajuste.save()
 
-                    # Actualización de stock (Descontar)
                     producto.cant_exist_producto -= nuevo_ajuste.cantidad_ajustada
                     producto.save()
 
@@ -296,9 +344,8 @@ def crear_ajuste_producto(request):
             except Exception as e:
                 messages.error(request, f"Error en la base de datos: {e}")
         else:
-            # Captura errores de validación del formulario (ej: stock insuficiente)
             for error in form.errors.values():
-                messages.error(request, error)
+                messages.error(error)
             return redirect('lista_ajustes_producto')
 
     productos = Producto.objects.filter(estado_producto=True)
@@ -307,25 +354,22 @@ def crear_ajuste_producto(request):
 
 @login_required
 def editar_ajuste_producto(request, id_ajuste):
+    if request.user.rol_fk_usuario.rol != 'ADMIN':
+        messages.error(request, "Acceso denegado.")
+        return redirect('lista_ajustes_producto')
+
     ajuste = get_object_or_404(AjusteInventario, id_ajuste=id_ajuste)
     producto = ajuste.id_prod_fk_ajuste
 
-    # Pasamos la instancia y el producto para recalcular el stock disponible real
     form = AjusteInventarioForm(request.POST or None, instance=ajuste, producto=producto)
 
     if request.method == 'POST':
         if form.is_valid():
             try:
                 with transaction.atomic():
-                    # Guardamos el ajuste (sin confirmar en BD aún)
                     ajuste_editado = form.save(commit=False)
-
-                    # 1. Revertimos el stock anterior (lo devolvemos al producto)
-                    # Usamos el valor original guardado en la base de datos
                     valor_anterior = AjusteInventario.objects.get(pk=id_ajuste).cantidad_ajustada
                     producto.cant_exist_producto += valor_anterior
-
-                    # 2. Aplicamos la nueva resta (el valor actualizado en el form)
                     producto.cant_exist_producto -= ajuste_editado.cantidad_ajustada
                     producto.save()
 
@@ -336,13 +380,17 @@ def editar_ajuste_producto(request, id_ajuste):
                 messages.error(request, f"Error al editar: {e}")
         else:
             for error in form.errors.values():
-                messages.error(request, error)
+                messages.error(error)
 
     return render(request, 'inventario/ajuste_producto/editar.html', {'ajuste': ajuste, 'form': form})
 
 
 @login_required
 def eliminar_ajuste_producto(request, id_ajuste):
+    if request.user.rol_fk_usuario.rol != 'ADMIN':
+        messages.error(request, "Acceso denegado.")
+        return redirect('lista_ajustes_producto')
+
     ajuste = get_object_or_404(AjusteInventario, id_ajuste=id_ajuste)
 
     if request.method == 'POST':
@@ -354,7 +402,6 @@ def eliminar_ajuste_producto(request, id_ajuste):
         try:
             with transaction.atomic():
                 producto = ajuste.id_prod_fk_ajuste
-                # Devolvemos la cantidad al stock antes de borrar el registro
                 producto.cant_exist_producto += ajuste.cantidad_ajustada
                 producto.save()
 
@@ -365,10 +412,15 @@ def eliminar_ajuste_producto(request, id_ajuste):
 
     return redirect('lista_ajustes_producto')
 
+
 # ------------------------------ AJUSTE MATERIA PRIMA ------------------------------
 
 @login_required
 def lista_ajustes_mat_prima(request):
+    if request.user.rol_fk_usuario.rol != 'ADMIN':
+        messages.error(request, "Acceso denegado.")
+        return redirect('inicio')
+
     ajustes = AjusteInventarioMatPrima.objects.all().select_related(
         'id_mat_fk_ajuste_mat',
         'id_usuario_fk_ajuste_mat'
@@ -378,11 +430,14 @@ def lista_ajustes_mat_prima(request):
 
 @login_required
 def crear_ajuste_mat_prima(request):
+    if request.user.rol_fk_usuario.rol != 'ADMIN':
+        messages.error(request, "Acceso denegado.")
+        return redirect('lista_ajustes_mat_prima')
+
     if request.method == 'POST':
         id_mat = request.POST.get('materia_prima')
         materia = get_object_or_404(MateriaPrima, id_materia_prima=id_mat)
 
-        # Pasamos la materia al form para validar el stock disponible decimal
         form = AjusteMatPrimaForm(request.POST, materia=materia)
 
         if form.is_valid():
@@ -394,7 +449,6 @@ def crear_ajuste_mat_prima(request):
                     nuevo_ajuste.fecha_ajust_mat = timezone.now()
                     nuevo_ajuste.save()
 
-                    # Actualización de stock (Descontar decimales)
                     materia.cantidad_exist_mat_prima -= nuevo_ajuste.cantidad_ajustada_mat
                     materia.save()
 
@@ -404,7 +458,7 @@ def crear_ajuste_mat_prima(request):
                 messages.error(request, f"Error en la base de datos: {e}")
         else:
             for error in form.errors.values():
-                messages.error(request, error)
+                messages.error(error)
             return redirect('lista_ajustes_mat_prima')
 
     materias = MateriaPrima.objects.filter(estado_materia_prima=True)
@@ -413,6 +467,10 @@ def crear_ajuste_mat_prima(request):
 
 @login_required
 def editar_ajuste_mat_prima(request, id_ajust_mat):
+    if request.user.rol_fk_usuario.rol != 'ADMIN':
+        messages.error(request, "Acceso denegado.")
+        return redirect('lista_ajustes_mat_prima')
+
     ajuste = get_object_or_404(AjusteInventarioMatPrima, id_ajust_mat=id_ajust_mat)
     materia = ajuste.id_mat_fk_ajuste_mat
 
@@ -423,12 +481,8 @@ def editar_ajuste_mat_prima(request, id_ajust_mat):
             try:
                 with transaction.atomic():
                     ajuste_editado = form.save(commit=False)
-
-                    # 1. Revertimos el stock anterior (valor decimal)
                     valor_anterior = AjusteInventarioMatPrima.objects.get(pk=id_ajust_mat).cantidad_ajustada_mat
                     materia.cantidad_exist_mat_prima += valor_anterior
-
-                    # 2. Aplicamos la nueva resta
                     materia.cantidad_exist_mat_prima -= ajuste_editado.cantidad_ajustada_mat
                     materia.save()
 
@@ -439,13 +493,17 @@ def editar_ajuste_mat_prima(request, id_ajust_mat):
                 messages.error(request, f"Error al editar: {e}")
         else:
             for error in form.errors.values():
-                messages.error(request, error)
+                messages.error(error)
 
     return render(request, 'inventario/ajuste_mat/editar.html', {'ajuste': ajuste, 'form': form})
 
 
 @login_required
 def eliminar_ajuste_mat_prima(request, id_ajust_mat):
+    if request.user.rol_fk_usuario.rol != 'ADMIN':
+        messages.error(request, "Acceso denegado.")
+        return redirect('lista_ajustes_mat_prima')
+
     ajuste = get_object_or_404(AjusteInventarioMatPrima, id_ajust_mat=id_ajust_mat)
 
     if request.method == 'POST':
@@ -457,7 +515,6 @@ def eliminar_ajuste_mat_prima(request, id_ajust_mat):
         try:
             with transaction.atomic():
                 materia = ajuste.id_mat_fk_ajuste_mat
-                # Devolvemos la cantidad al stock antes de borrar
                 materia.cantidad_exist_mat_prima += ajuste.cantidad_ajustada_mat
                 materia.save()
 
