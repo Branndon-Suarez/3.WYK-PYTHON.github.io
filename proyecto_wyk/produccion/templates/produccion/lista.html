@@ -34,6 +34,14 @@
         .datetime-date { font-weight: 500; color: #fff; }
         .datetime-time { font-size: 0.75rem; opacity: 0.7; color: rgba(255, 255, 255, 0.6); }
 
+        /* Estilos para Descripción y Responsable (Igual a Compras) */
+        .text-detail {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.6);
+            display: block;
+        }
+        .text-detail i { color: var(--primary-color); width: 18px; }
+
         .truncate-text {
             max-width: 200px;
             white-space: nowrap;
@@ -53,6 +61,16 @@
             font-weight: 600 !important;
             border: none !important;
             margin-top: 15px !important;
+        }
+
+        .filter-label-group {
+            display: block;
+            color: var(--primary-color);
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 15px 0 10px 0;
         }
     </style>
 {% endblock %}
@@ -93,7 +111,7 @@
                         <th style="width: 60px;" class="text-center">ID</th>
                         <th style="width: 140px;">FECHA Y HORA</th>
                         <th>LOTE / CATEGORÍA</th>
-                        <th>PRODUCTO FINAL</th>
+                        <th>PRODUCTO FINAL / DETALLE</th>
                         <th class="text-center">CANT.</th>
                         <th class="text-center">SUPERVISOR</th>
                         <th class="text-center">ESTADO</th>
@@ -102,7 +120,7 @@
                 </thead>
                 <tbody>
                     {% for p in producciones %}
-                    <tr data-estado="{{ p.estado_produccion|lower }}">
+                    <tr data-estado="{{ p.estado_produccion|lower }}" data-categoria="{{ p.categoria_produccion|slugify }}">
                         <td class="text-center text-gold fw-bold">#{{ p.id_produccion }}</td>
                         <td>
                             <div class="datetime-container">
@@ -118,7 +136,7 @@
                             <div class="text-white">{{ p.id_producto_fk_produccion.nombre_producto }}</div>
                             <span class="text-detail">
                                 <div class="truncate-text" title="{{ p.descripcion_produccion|default:'Sin descripción' }}">
-                                    <i class="fas fa-info-circle"></i> {{ p.descripcion_produccion|default:"Sin descripción" }}
+                                    <i class="fas fa-comment-alt"></i> {{ p.descripcion_produccion|default:"Sin descripción" }}
                                 </div>
                             </span>
                         </td>
@@ -179,7 +197,14 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <span class="filter-label-group">Estado del Proceso:</span>
+                <span class="filter-label-group">Categoría de Producción:</span>
+                <div class="filter-container">
+                    <div class="chip active" data-group="categoria" data-filter="all">Todas</div>
+                    <div class="chip" data-group="categoria" data-filter="panaderia">Panadería</div>
+                    <div class="chip" data-group="categoria" data-filter="pasteleria">Pastelería</div>
+                </div>
+
+                <span class="filter-label-group mt-3">Estado del Proceso:</span>
                 <div class="filter-container">
                     <div class="chip active" data-group="estado" data-filter="all">Todos</div>
                     <div class="chip" data-group="estado" data-filter="pendiente">Pendientes</div>
@@ -228,15 +253,20 @@
     function filtrarTodo() {
         const texto = document.getElementById('inputBusqueda').value.toLowerCase();
         const estado = document.querySelector('.chip[data-group="estado"].active').dataset.filter;
+        const categoria = document.querySelector('.chip[data-group="categoria"].active').dataset.filter;
         const rows = document.querySelectorAll('#tablaProduccion tbody tr');
 
         rows.forEach(row => {
             if (row.cells.length < 2) return;
             const content = row.innerText.toLowerCase();
             const rowEstado = row.dataset.estado;
+            const rowCategoria = row.dataset.categoria;
+
             const matchesText = content.includes(texto);
             const matchesEstado = (estado === 'all' || rowEstado === estado);
-            row.style.display = (matchesText && matchesEstado) ? '' : 'none';
+            const matchesCategoria = (categoria === 'all' || rowCategoria === categoria);
+
+            row.style.display = (matchesText && matchesEstado && matchesCategoria) ? '' : 'none';
         });
     }
 
@@ -286,7 +316,6 @@
                     Swal.showValidationMessage('La contraseña es necesaria');
                     return false;
                 }
-                // Primero verificamos la contraseña con AJAX
                 return fetch("{% url 'verificar_password_ajax' %}", {
                     method: 'POST',
                     headers: {
@@ -300,7 +329,6 @@
                     if (!data.valid) {
                         throw new Error('Contraseña incorrecta');
                     }
-                    // Si es válida, realizamos la acción de producción
                     return fetch(config.url, {
                         method: 'POST',
                         headers: {

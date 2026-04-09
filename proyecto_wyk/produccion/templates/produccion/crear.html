@@ -49,6 +49,21 @@
             -moz-appearance: none;
             appearance: none;
         }
+
+        /* Estilo para el select de categoría */
+        .form-select-wyk {
+            background: rgba(255, 255, 255, 0.05) !important;
+            color: white !important;
+            border: 1px solid rgba(245, 166, 35, 0.3) !important;
+            padding: 10px !important;
+            width: 100%;
+            border-radius: 8px;
+            outline: none;
+        }
+        .form-select-wyk option {
+            background: #1a0a00;
+            color: white;
+        }
     </style>
 {% endblock %}
 
@@ -90,7 +105,11 @@
 
                 <div class="form-group">
                     <label><i class="fas fa-layer-group"></i> Categoría</label>
-                    {{ form.categoria_produccion }}
+                    <select name="categoria_produccion" class="form-select-wyk" required>
+                        <option value="" disabled selected>Seleccione una categoría...</option>
+                        <option value="PANADERIA">Panadería</option>
+                        <option value="PASTELERIA">Pastelería</option>
+                    </select>
                 </div>
             </div>
 
@@ -276,10 +295,8 @@
         const inputCant = tbody.lastElementChild.querySelector('input[name*="cantidad_requerida"]');
 
         select.value = item_id;
-        // Guardamos el stock disponible en un atributo del input para validar
         inputCant.setAttribute('data-stock-max', item_stock);
 
-        // Listener para validación inmediata
         inputCant.addEventListener('input', function() {
             validarStockFila(this);
         });
@@ -325,9 +342,9 @@
         const producto = document.getElementById('id_prod_final_hidden').value;
         const nombreLote = document.querySelector('input[name="nombre_produccion"]').value;
         const cantidad = document.querySelector('input[name="cant_produccion"]').value;
+        const categoria = document.querySelector('select[name="categoria_produccion"]').value;
         const filasInsumos = document.querySelectorAll('#tabla-insumos tbody tr').length;
 
-        // Verificar si hay errores de stock
         const erroresStock = document.querySelectorAll('.stock-insuficiente').length;
 
         if (erroresStock > 0) {
@@ -335,8 +352,8 @@
             return;
         }
 
-        if (!producto || !nombreLote || !cantidad) {
-            Swal.fire({...swalConfig, icon: 'warning', title: 'Campos Incompletos', text: 'Revisa el nombre, el producto y la cantidad.'});
+        if (!producto || !nombreLote || !cantidad || !categoria) {
+            Swal.fire({...swalConfig, icon: 'warning', title: 'Campos Incompletos', text: 'Revisa el nombre, el producto, la cantidad y la categoría.'});
             return;
         }
 
