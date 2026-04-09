@@ -164,7 +164,22 @@
             <label><i class="fas fa-boxes"></i> Categoría</label>
             <span>{{ compra.tipo }}</span>
         </div>
+
+        {# SECCIÓN DE TRAZABILIDAD DEL CAMBIO DE ESTADO #}
+        {% if compra.fecha_cambio_estado %}
         <div class="info-item">
+            <label>
+                {% if compra.estado_factura_compra == 'PAGADA' %}
+                    <i class="fas fa-calendar-check" style="color: #5fff8b;"></i> Fecha de Pago
+                {% else %}
+                    <i class="fas fa-calendar-times" style="color: #ff6b6b;"></i> Fecha de Cancelación
+                {% endif %}
+            </label>
+            <span>{{ compra.fecha_cambio_estado|date:"d/m/Y - H:i" }}</span>
+        </div>
+        {% endif %}
+
+        <div class="info-item" style="grid-column: 1 / -1;">
             <label><i class="fas fa-pen-nib"></i> Observaciones</label>
             <span style="font-style: italic; color: #ccc;">"{{ compra.descripcion_compra|default:"Sin notas adicionales." }}"</span>
         </div>

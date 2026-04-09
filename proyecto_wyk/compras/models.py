@@ -29,7 +29,6 @@ class Proveedor(models.Model):
 # ---------------------------------MODELO COMPRA---------------------------------
 class Compra(models.Model):
     class TipoCompra(models.TextChoices):
-        # Ajustado para ser coherente con los tipos comunes de compra
         MATERIA_PRIMA = 'MATERIA PRIMA', 'Materia Prima'
         PRODUCTO_TERMINADO = 'PRODUCTO TERMINADO', 'Producto Terminado'
 
@@ -40,11 +39,15 @@ class Compra(models.Model):
 
     id_compra = models.BigAutoField(primary_key=True, db_column='id_compra')
     fecha_hora_compra = models.DateTimeField(db_column='fecha_hora_compra')
+
+    # NUEVO CAMPO: Para registrar cuándo cambió de estado (PAGADA/CANCELADA)
+    fecha_cambio_estado = models.DateTimeField(blank=True, null=True, db_column='fecha_cambio_estado')
+
     tipo = models.CharField(max_length=20, choices=TipoCompra.choices, db_column='tipo')
     total_compra = models.BigIntegerField(db_column='total_compra')
     descripcion_compra = models.CharField(max_length=200, blank=True, null=True, db_column='descripcion_compra')
 
-    # RELACIÓN CON PROVEEDOR (Nueva según tu SQL)
+    # RELACIÓN CON PROVEEDOR
     id_proveedor_fk_compra = models.ForeignKey(
         Proveedor,
         on_delete=models.PROTECT,
@@ -59,7 +62,7 @@ class Compra(models.Model):
     )
 
     estado_factura_compra = models.CharField(
-        max_length=20,  # Aumentado un poco por seguridad de los ENUMS
+        max_length=20,
         choices=EstadoPago.choices,
         db_column='estado_factura_compra'
     )
@@ -76,7 +79,6 @@ class Compra(models.Model):
 class DetalleCompraMateriaPrima(models.Model):
     id_det_compra_mat_prim = models.AutoField(primary_key=True, db_column='id_det_compra_mat_prim')
 
-    # DECIMAL(10,3) para mermas o compras exactas
     cantidad_mat_prima_comprada = models.DecimalField(
         max_digits=10,
         decimal_places=3,

@@ -23,6 +23,10 @@ class Venta(models.Model):
     # BIGSERIAL en Postgres -> BigAutoField en Django
     id_venta = models.BigAutoField(primary_key=True, db_column='id_venta')
     fecha_hora_venta = models.DateTimeField(db_column='fecha_hora_venta')
+
+    # NUEVO CAMPO: Registro de fecha y hora del cambio de estado (pago o cancelación)
+    fecha_cambio_estado = models.DateTimeField(blank=True, null=True, db_column='fecha_cambio_estado')
+
     total_venta = models.BigIntegerField(db_column='total_venta')
     numero_mesa = models.IntegerField(blank=True, null=True, db_column='numero_mesa')
     descripcion = models.CharField(max_length=200, blank=True, null=True, db_column='descripcion')
@@ -61,8 +65,6 @@ class DetalleVenta(models.Model):
     sub_total = models.BigIntegerField(db_column='sub_total')
 
     # FK a la Venta (Padre)
-    # Usamos CASCADE aquí porque si se borra la cabecera de la venta,
-    # sus detalles no tienen sentido solos (aunque usualmente no borrarás ventas).
     id_venta_fk_det_venta = models.ForeignKey(
         Venta,
         on_delete=models.CASCADE,

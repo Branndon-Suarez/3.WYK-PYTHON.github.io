@@ -16,6 +16,11 @@ class Produccion(models.Model):
     # BIGSERIAL en Postgres -> BigAutoField en Django
     id_produccion = models.BigAutoField(primary_key=True, db_column='id_produccion')
     nombre_produccion = models.CharField(max_length=50, db_column='nombre_produccion')
+
+    # NUEVOS CAMPOS SEGÚN TU SQL ACTUALIZADO
+    fecha_hora_produccion = models.DateTimeField(db_column='fecha_hora_produccion')
+    fecha_cambio_estado = models.DateTimeField(blank=True, null=True, db_column='fecha_cambio_estado')
+
     categoria_produccion = models.CharField(max_length=50, db_column='categoria_produccion')
     cant_produccion = models.BigIntegerField(db_column='cant_produccion')
     descripcion_produccion = models.CharField(max_length=200, db_column='descripcion_produccion')

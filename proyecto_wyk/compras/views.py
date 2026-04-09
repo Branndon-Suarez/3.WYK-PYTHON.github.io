@@ -125,7 +125,6 @@ def crear_compra(request):
     materias_primas = MateriaPrima.objects.filter(estado_materia_prima=True)
     productos = Producto.objects.filter(estado_producto=True)
 
-    # Inicializamos las variables para que siempre existan en el contexto (Evita UnboundLocalError)
     form = CompraForm(request.POST or None)
     formset_mat = DetalleMateriaPrimaFormSet(request.POST or None, prefix='detallecompramateriaprima_set')
     formset_prod = DetalleProductoFormSet(request.POST or None, prefix='detallecompraproducto_set')
@@ -173,7 +172,6 @@ def crear_compra(request):
             except Exception as e:
                 messages.error(request, f"Error: {str(e)}")
         else:
-            # Esta validación activa el SweetAlert si no se selecciona proveedor o tipo
             messages.error(request, "Campos incompletos: Asegúrate de seleccionar un proveedor y el tipo de compra.")
 
     return render(request, 'compras/compra/crear.html', {
@@ -229,6 +227,7 @@ def pagar_compra_ajax(request):
                         prod.save()
 
                 compra.estado_factura_compra = 'PAGADA'
+                compra.fecha_cambio_estado = timezone.now()  # Registro de fecha y hora del pago
                 compra.save()
 
             return JsonResponse({'success': True, 'message': 'Pago confirmado y stock actualizado.'})
@@ -248,9 +247,29 @@ def cancelar_compra_ajax(request):
         if not request.user.check_password(data.get('password')):
             return JsonResponse({'success': False, 'message': 'Contraseña incorrecta.'})
 
-        compra = get_object_or_404(Compra, id_compra=data.get('id_compra'))
-        compra.estado_factura_compra = 'CANCELADA'
-        compra.save()
-        return JsonResponse({'success': True, 'message': 'Compra anulada.'})
+        try:
+            with transaction.atomic():
+                compra = get_object_or_404(Compra, id_compra=data.get('id_compra'))
+
+                # Si la compra ya estaba pagada, revertimos el stock antes de cancelar
+                if compra.estado_factura_compra == 'PAGADA':
+                    if compra.tipo == 'MATERIA PRIMA':
+                        for d in DetalleCompraMateriaPrima.objects.filter(id_compra_fk_det_compra_mat_prima=compra):
+                            insumo = d.id_mat_prima_fk_det_compra_mat_prima
+                            insumo.cantidad_exist_mat_prima -= d.cantidad_mat_prima_comprada
+                            insumo.save()
+                    else:
+                        for d in DetalleCompraProducto.objects.filter(id_compra_fk_det_compra_prod=compra):
+                            prod = d.id_prod_fk_det_compra_prod
+                            prod.cant_exist_producto -= d.cantidad_prod_comprado
+                            prod.save()
+
+                compra.estado_factura_compra = 'CANCELADA'
+                compra.fecha_cambio_estado = timezone.now()  # Registro de fecha y hora de la cancelación
+                compra.save()
+
+            return JsonResponse({'success': True, 'message': 'Compra anulada y stock revertido.'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)})
 
     return JsonResponse({'success': False}, status=400)
