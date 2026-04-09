@@ -15,19 +15,36 @@ from .forms import ProduccionForm, InsumosProduccionFormSet
 
 @login_required
 def lista_produccion(request):
-    """ Lista todas las órdenes de producción ordenadas por fecha reciente """
-    if request.user.rol_fk_usuario.rol not in ['ADMIN', 'OPERARIO']:
+    """ Lista las órdenes de producción filtradas según el rol del usuario """
+    rol_usuario = request.user.rol_fk_usuario.rol
+
+    if rol_usuario not in ['ADMIN', 'PASTELERO', 'PANADERO']:
         messages.error(request, "Acceso denegado. No tienes permisos para ver producción.")
         return redirect('inicio')
 
-    producciones = Produccion.objects.all().order_by('-fecha_hora_produccion')
+    # Base de la consulta
+    queryset = Produccion.objects.all().order_by('-fecha_hora_produccion')
+
+    # Aplicar filtros según el rol
+    if rol_usuario == 'PANADERO':
+        # Filtra solo categoría Panadería
+        producciones = queryset.filter(categoria_produccion='PANADERIA')
+    elif rol_usuario == 'PASTELERO':
+        # Filtra solo categoría Pastelería
+        producciones = queryset.filter(categoria_produccion='PASTELERIA')
+    else:
+        # El ADMIN ve todos los registros
+        producciones = queryset
+
     return render(request, 'produccion/lista.html', {'producciones': producciones})
 
 
 @login_required
 def crear_produccion(request):
-    """ Registra una nueva orden de producción con sus insumos """
-    if request.user.rol_fk_usuario.rol not in ['ADMIN', 'OPERARIO']:
+    """ Registra una nueva orden de producción con sus insumos y categoría fija según rol """
+    rol_usuario = request.user.rol_fk_usuario.rol
+
+    if rol_usuario not in ['ADMIN', 'PASTELERO', 'PANADERO']:
         messages.error(request, "Acceso denegado. No tienes permisos para registrar producción.")
         return redirect('lista_produccion')
 
@@ -45,8 +62,15 @@ def crear_produccion(request):
                     nueva_produccion = form.save(commit=False)
                     nueva_produccion.id_usuario_fk_produccion = request.user
                     nueva_produccion.fecha_hora_produccion = timezone.now()
-                    # Se asegura el estado inicial para evitar el error de campo obligatorio
                     nueva_produccion.estado_produccion = 'PENDIENTE'
+
+                    # ASIGNACIÓN FIJA DE CATEGORÍA SEGÚN ROL
+                    if rol_usuario == 'PANADERO':
+                        nueva_produccion.categoria_produccion = 'PANADERIA'
+                    elif rol_usuario == 'PASTELERO':
+                        nueva_produccion.categoria_produccion = 'PASTELERIA'
+                    # Si es ADMIN, toma el valor seleccionado en el formulario
+
                     nueva_produccion.save()
 
                     # 2. Guardar Detalle
@@ -67,24 +91,44 @@ def crear_produccion(request):
                 for field, error in dict_error.items(): messages.error(request, f"Insumo: {error}")
     else:
         form = ProduccionForm()
+
+        # Establecer valor inicial en el formulario según el rol (útil para el frontend)
+        if rol_usuario == 'PANADERO':
+            form.fields['categoria_produccion'].initial = 'PANADERIA'
+        elif rol_usuario == 'PASTELERO':
+            form.fields['categoria_produccion'].initial = 'PASTELERIA'
+
         formset = InsumosProduccionFormSet(prefix='insumos_set')
 
     return render(request, 'produccion/crear.html', {
         'form': form,
         'formset': formset,
         'productos': productos,
-        'materias_primas': materias_primas
+        'materias_primas': materias_primas,
+        'rol_usuario': rol_usuario
     })
 
 
 @login_required
 def detalle_produccion(request, id_produccion):
     """ Muestra la información completa de una producción y sus insumos consumidos """
-    if request.user.rol_fk_usuario.rol not in ['ADMIN', 'OPERARIO']:
+    rol_usuario = request.user.rol_fk_usuario.rol
+
+    if rol_usuario not in ['ADMIN', 'PASTELERO', 'PANADERO']:
         messages.error(request, "Acceso denegado.")
         return redirect('lista_produccion')
 
     produccion = get_object_or_404(Produccion, id_produccion=id_produccion)
+
+    # Seguridad adicional: Validar que el usuario no acceda por ID a una categoría ajena
+    if rol_usuario == 'PANADERO' and produccion.categoria_produccion != 'PANADERIA':
+        messages.error(request, "No tienes permiso para ver registros de otras categorías.")
+        return redirect('lista_produccion')
+
+    if rol_usuario == 'PASTELERO' and produccion.categoria_produccion != 'PASTELERIA':
+        messages.error(request, "No tienes permiso para ver registros de otras categorías.")
+        return redirect('lista_produccion')
+
     insumos = produccion.insumos.all()
 
     return render(request, 'produccion/detalle.html', {

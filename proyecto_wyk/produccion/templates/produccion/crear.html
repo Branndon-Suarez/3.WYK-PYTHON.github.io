@@ -33,7 +33,6 @@
             width: 100%;
         }
 
-        /* Clase para error de stock */
         .stock-insuficiente {
             border: 1px solid #ff8a8a !important;
             background: rgba(255, 138, 138, 0.1) !important;
@@ -50,7 +49,6 @@
             appearance: none;
         }
 
-        /* Estilo para el select de categoría */
         .form-select-wyk {
             background: rgba(255, 255, 255, 0.05) !important;
             color: white !important;
@@ -60,6 +58,14 @@
             border-radius: 8px;
             outline: none;
         }
+
+        .form-select-wyk:disabled {
+            background: rgba(255, 255, 255, 0.02) !important;
+            color: #f5a623 !important;
+            opacity: 0.8;
+            cursor: not-allowed;
+        }
+
         .form-select-wyk option {
             background: #1a0a00;
             color: white;
@@ -105,11 +111,20 @@
 
                 <div class="form-group">
                     <label><i class="fas fa-layer-group"></i> Categoría</label>
-                    <select name="categoria_produccion" class="form-select-wyk" required>
-                        <option value="" disabled selected>Seleccione una categoría...</option>
-                        <option value="PANADERIA">Panadería</option>
-                        <option value="PASTELERIA">Pastelería</option>
-                    </select>
+                    {% if rol_usuario == 'ADMIN' %}
+                        <select name="categoria_produccion" class="form-select-wyk" required>
+                            <option value="" disabled selected>Seleccione una categoría...</option>
+                            <option value="PANADERIA">Panadería</option>
+                            <option value="PASTELERIA">Pastelería</option>
+                        </select>
+                    {% else %}
+                        {# Para Panaderos y Pasteleros se muestra bloqueado y se envía por un hidden #}
+                        <select class="form-select-wyk" disabled>
+                            <option value="PANADERIA" {% if rol_usuario == 'PANADERO' %}selected{% endif %}>Panadería</option>
+                            <option value="PASTELERIA" {% if rol_usuario == 'PASTELERO' %}selected{% endif %}>Pastelería</option>
+                        </select>
+                        <input type="hidden" name="categoria_produccion" value="{% if rol_usuario == 'PANADERO' %}PANADERIA{% else %}PASTELERIA{% endif %}">
+                    {% endif %}
                 </div>
             </div>
 
@@ -342,7 +357,8 @@
         const producto = document.getElementById('id_prod_final_hidden').value;
         const nombreLote = document.querySelector('input[name="nombre_produccion"]').value;
         const cantidad = document.querySelector('input[name="cant_produccion"]').value;
-        const categoria = document.querySelector('select[name="categoria_produccion"]').value;
+        // Obtenemos la categoría del select (si es admin) o del hidden (si es otro rol)
+        const categoria = document.querySelector('[name="categoria_produccion"]').value;
         const filasInsumos = document.querySelectorAll('#tabla-insumos tbody tr').length;
 
         const erroresStock = document.querySelectorAll('.stock-insuficiente').length;

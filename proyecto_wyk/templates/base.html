@@ -85,7 +85,9 @@
                     <i class="fa fa-shopping-cart"></i>
                     <span>Historial Compras</span>
                 </a>
+                {% endif %}
 
+                {% if user.rol_fk_usuario.rol == 'ADMIN' or user.rol_fk_usuario.rol == 'PANADERO' or user.rol_fk_usuario.rol == 'PASTELERO' %}
                 <div class="nav-section">PRODUCCIÓN</div>
 
                 <a href="{% url 'lista_produccion' %}" class="nav-item {% if 'produccion' in request.resolver_match.url_name %}active{% endif %}">
