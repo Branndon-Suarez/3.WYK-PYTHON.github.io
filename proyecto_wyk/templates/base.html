@@ -99,6 +99,16 @@
                     <span>Control Producción</span>
                 </a>
                 {% endif %}
+
+                {# Acceso permitido para ADMIN, CAJERO y MESERO #}
+                {% if user.rol_fk_usuario.rol == 'ADMIN' or user.rol_fk_usuario.rol == 'CAJERO' or user.rol_fk_usuario.rol == 'MESERO' %}
+                <div class="nav-section">VENTAS</div>
+
+                <a href="{% url 'lista_ventas' %}" class="nav-item {% if 'ventas' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fa fa-cash-register"></i>
+                    <span>Punto de Venta</span>
+                </a>
+                {% endif %}
             </div>
 
             <div class="sidebar-footer">

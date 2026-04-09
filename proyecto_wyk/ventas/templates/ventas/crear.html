@@ -1,0 +1,330 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Nueva Venta - WYK{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/dashboard-formularios-crear-mov.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dashboard-formularios.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dashboard-tablas.css' %}">
+
+    <style>
+        .unit-subtitle { font-size: 0.7rem; color: rgba(255, 255, 255, 0.5); text-transform: lowercase; display: block; margin-top: 2px; }
+        .fila-seleccionable { cursor: pointer; transition: 0.3s; }
+        .fila-seleccionable:hover { background: rgba(245, 166, 35, 0.1) !important; }
+
+        .modal-body { max-height: 450px; overflow-y: auto !important; padding: 0 !important; }
+
+        .tabla-productos input {
+            background: rgba(255, 255, 255, 0.05) !important;
+            color: white !important;
+            border: 1px solid rgba(245, 166, 35, 0.3) !important;
+            padding: 8px !important;
+            width: 100%;
+        }
+
+        /* Estilo de error de stock igual a producción */
+        .stock-insuficiente {
+            border: 1px solid #ff8a8a !important;
+            background: rgba(255, 138, 138, 0.1) !important;
+            box-shadow: 0 0 5px rgba(255, 138, 138, 0.5);
+        }
+
+        .tabla-productos select {
+            pointer-events: none;
+            background: rgba(0,0,0,0.2) !important;
+            border: none;
+            color: #f5a623;
+            -webkit-appearance: none; appearance: none;
+        }
+
+        .total-container {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(245, 166, 35, 0.05);
+            border-radius: 8px;
+            text-align: right;
+            border: 1px solid rgba(245, 166, 35, 0.2);
+        }
+
+        .total-text { font-size: 1.5rem; color: #f5a623; font-weight: 700; }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="compra-container">
+    <a href="{% url 'lista_ventas' %}" class="volver" style="color: var(--dorado-wyk); text-decoration: none; display: inline-block; margin-bottom: 15px;">
+        <i class="fas fa-arrow-left"></i> Volver al Historial
+    </a>
+
+    <h2 class="titulo-seccion"><i class="fas fa-cash-register"></i> Registrar Nueva Venta</h2>
+
+    <form method="post" id="formNuevaVenta">
+        {% csrf_token %}
+
+        <div class="form-card-wyk">
+            <div class="form-grid">
+                {# Si es Cajero, el campo se oculta y se envía vacío. El ADMIN y MESERO lo ven normal #}
+                {% if user.rol_fk_usuario.rol == 'CAJERO' %}
+                    <div style="display: none;">
+                        {{ form.numero_mesa }}
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-info-circle"></i> Tipo de Venta</label>
+                        <input type="text" class="input-wyk" value="VENTA DIRECTA (MOSTRADOR)" readonly style="opacity: 0.8; color: #28a745; border-color: #28a745;">
+                    </div>
+                {% else %}
+                    <div class="form-group">
+                        <label><i class="fas fa-chair"></i> Número de Mesa (Opcional)</label>
+                        {{ form.numero_mesa }}
+                    </div>
+                {% endif %}
+
+                <div class="form-group">
+                    <label><i class="fas fa-info-circle"></i> Estado Inicial</label>
+                    {# Visualmente mostramos el estado según el rol #}
+                    {% if user.rol_fk_usuario.rol == 'CAJERO' or user.rol_fk_usuario.rol == 'ADMIN' %}
+                        <input type="text" class="input-wyk" value="PAGADA / FINALIZADA" readonly style="opacity: 0.6; color: #f5a623;">
+                    {% else %}
+                        <input type="text" class="input-wyk" value="PENDIENTE" readonly style="opacity: 0.6;">
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label><i class="fas fa-align-left"></i> Observaciones</label>
+                {{ form.descripcion }}
+            </div>
+        </div>
+
+        <div class="productos-card">
+            <button type="button" class="btn-add-item" onclick="abrirModalProductos()">
+                <i class="fas fa-plus"></i> Añadir Producto al Carrito
+            </button>
+            <h3 style="margin-bottom: 20px;">Detalle de la Venta</h3>
+
+            <div class="table-wrap">
+                <input type="hidden" name="detalles_set-TOTAL_FORMS" id="id_detalles_set-TOTAL_FORMS" value="0">
+                <input type="hidden" name="detalles_set-INITIAL_FORMS" id="id_detalles_set-INITIAL_FORMS" value="0">
+                <input type="hidden" name="detalles_set-MIN_NUM_FORMS" id="id_detalles_set-MIN_NUM_FORMS" value="0">
+                <input type="hidden" name="detalles_set-MAX_NUM_FORMS" id="id_detalles_set-MAX_NUM_FORMS" value="1000">
+
+                <table class="tabla-productos" id="tabla-detalles">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th style="width: 150px;">Precio Unit.</th>
+                            <th style="width: 150px;">Cantidad</th>
+                            <th style="width: 150px;">Subtotal</th>
+                            <th style="width: 80px;" class="text-center">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+
+                <template id="empty-row-detalle">
+                    <tr>
+                        <td>{{ formset.empty_form.id_producto_fk_det_venta }}</td>
+                        <td><input type="text" class="precio-unitario" readonly style="opacity: 0.7;"></td>
+                        <td>{{ formset.empty_form.cantidad }}</td>
+                        <td><input type="text" class="subtotal-fila" readonly style="color: #f5a623; font-weight: bold;"></td>
+                        <td class="text-center">
+                            <button type="button" class="btn-eliminar-fila" onclick="eliminarFila(this)">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                </template>
+            </div>
+
+            <div class="total-container">
+                <span style="color: white; opacity: 0.8; margin-right: 15px;">TOTAL ESTIMADO:</span>
+                <span class="total-text" id="gran-total">$ 0</span>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px;">
+            <button type="button" class="btn-guardar-wyk" onclick="confirmarVenta()">
+                <i class="fas fa-save"></i> Guardar Venta
+            </button>
+        </div>
+    </form>
+</div>
+
+{# Modal Selector de Productos #}
+<div class="modal fade modal-wyk-custom" id="modalProductos" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header modal-header-wyk">
+                <h5 class="modal-title text-gold"><i class="fas fa-bread-slice me-2"></i> Seleccionar Producto</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-search-wrapper">
+                <div class="search-container">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" id="busquedaProducto" class="form-control" placeholder="Buscar por nombre...">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-body p-0">
+                <table class="table-wyk mb-0" id="tablaSelector">
+                    <thead>
+                        <tr>
+                            <th class="text-center">ID</th>
+                            <th>PRODUCTO</th>
+                            <th class="text-center">PRECIO</th>
+                            <th class="text-center">STOCK DISPONIBLE</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pr in productos %}
+                        <tr class="fila-seleccionable" data-id="{{ pr.id_producto }}" data-nombre="{{ pr.nombre_producto }}" data-precio="{{ pr.valor_unitario_product }}" data-stock="{{ pr.cant_exist_producto }}">
+                            <td class="text-center text-gold">#{{ pr.id_producto }}</td>
+                            <td class="text-white">{{ pr.nombre_producto }}</td>
+                            <td class="text-center text-gold fw-bold">$ {{ pr.valor_unitario_product }}</td>
+                            <td class="text-center">
+                                <span class="badge-nivel">{{ pr.cant_exist_producto }}</span>
+                                <span class="unit-subtitle">unidades</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/sweetalert2.all.min.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const swalConfig = { background: '#1a0a00', color: '#fff', confirmButtonColor: '#f5a623', heightAuto: false };
+
+    document.getElementById('busquedaProducto').addEventListener('keyup', function() {
+        const term = this.value.toLowerCase();
+        document.querySelectorAll('#tablaSelector tbody tr').forEach(row => {
+            row.style.display = row.textContent.toLowerCase().includes(term) ? "" : "none";
+        });
+    });
+
+    function abrirModalProductos() {
+        new bootstrap.Modal(document.getElementById('modalProductos')).show();
+    }
+
+    document.querySelectorAll('#tablaSelector tbody tr').forEach(fila => {
+        fila.addEventListener('click', function() {
+            agregarFilaProducto(this.dataset.id, this.dataset.precio, this.dataset.stock);
+            bootstrap.Modal.getInstance(document.getElementById('modalProductos')).hide();
+        });
+    });
+
+    function agregarFilaProducto(id, precio, stock) {
+        const totalFormsInput = document.getElementById('id_detalles_set-TOTAL_FORMS');
+        const count = parseInt(totalFormsInput.value);
+        const template = document.getElementById('empty-row-detalle');
+
+        const content = template.content.cloneNode(true);
+        const tr = content.querySelector('tr');
+        tr.innerHTML = tr.innerHTML.replace(/__prefix__/g, count);
+
+        const tbody = document.querySelector('#tabla-detalles tbody');
+        tbody.appendChild(tr);
+
+        const row = tbody.lastElementChild;
+        row.querySelector('select').value = id;
+        row.querySelector('.precio-unitario').value = `$ ${precio}`;
+
+        const inputCant = row.querySelector('input[name*="cantidad"]');
+        inputCant.setAttribute('data-precio', precio);
+        inputCant.setAttribute('data-stock-max', stock);
+
+        inputCant.addEventListener('input', function() {
+            calcularSubtotal(this);
+            validarStockFila(this);
+        });
+
+        totalFormsInput.value = count + 1;
+    }
+
+    function calcularSubtotal(input) {
+        const precio = parseFloat(input.getAttribute('data-precio'));
+        const cant = parseFloat(input.value) || 0;
+        const subtotal = precio * cant;
+        input.closest('tr').querySelector('.subtotal-fila').value = `$ ${subtotal.toFixed(0)}`;
+        actualizarTotalGlobal();
+    }
+
+    function validarStockFila(input) {
+        const stockMax = parseFloat(input.getAttribute('data-stock-max'));
+        const valorIngresado = parseFloat(input.value);
+
+        if (valorIngresado > stockMax) {
+            input.classList.add('stock-insuficiente');
+            Swal.fire({
+                ...swalConfig,
+                icon: 'warning',
+                title: 'Stock Insuficiente',
+                text: `Solo hay ${stockMax} unidades disponibles de este producto.`,
+                toast: true,
+                position: 'top-end',
+                timer: 3000,
+                showConfirmButton: false
+            });
+        } else {
+            input.classList.remove('stock-insuficiente');
+        }
+    }
+
+    function actualizarTotalGlobal() {
+        let total = 0;
+        document.querySelectorAll('input[name*="cantidad"]').forEach(input => {
+            const precio = parseFloat(input.getAttribute('data-precio'));
+            const cant = parseFloat(input.value) || 0;
+            total += (precio * parseInt(cant));
+        });
+        document.getElementById('gran-total').innerText = `$ ${total.toFixed(0)}`;
+    }
+
+    function eliminarFila(btn) {
+        btn.closest('tr').remove();
+        actualizarTotalGlobal();
+        document.getElementById('id_detalles_set-TOTAL_FORMS').value = document.querySelectorAll('#tabla-detalles tbody tr').length;
+    }
+
+    function confirmarVenta() {
+        const filas = document.querySelectorAll('#tabla-detalles tbody tr').length;
+        const erroresStock = document.querySelectorAll('.stock-insuficiente').length;
+
+        if (erroresStock > 0) {
+            Swal.fire({
+                ...swalConfig,
+                icon: 'error',
+                title: 'Error de Stock',
+                text: 'No puedes vender productos que superan las existencias actuales. Corrige las cantidades marcadas en rojo.'
+            });
+            return;
+        }
+
+        if (filas === 0) {
+            Swal.fire({...swalConfig, icon: 'warning', title: 'Carrito Vacío', text: 'Debes añadir al menos un producto.'});
+            return;
+        }
+
+        Swal.fire({
+            ...swalConfig,
+            title: '¿Registrar Venta?',
+            text: "Se guardará la orden de venta en el sistema.",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, registrar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('formNuevaVenta').submit();
+            }
+        });
+    }
+</script>
+{% endblock %}

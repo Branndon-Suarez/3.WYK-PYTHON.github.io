@@ -1,0 +1,366 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Historial de Ventas - WYK{% endblock %}
+
+{% block extra_css %}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/dashboard-tablas.css' %}">
+    <style>
+        .badge-estado {
+            padding: 5px 12px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            display: inline-block;
+            margin-bottom: 4px;
+        }
+        /* Estados de Pedido/Entrega */
+        .pedido-pendiente { background: rgba(245, 166, 35, 0.1); color: #f5a623; border: 1px solid #f5a623; }
+        .pedido-entregado { background: rgba(0, 123, 255, 0.1); color: #007bff; border: 1px solid #007bff; }
+        .pedido-cancelado { background: rgba(255, 138, 138, 0.1); color: #ff8a8a; border: 1px solid #ff8a8a; }
+
+        .sub-estado {
+            font-size: 0.65rem;
+            display: block;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .mesa-badge {
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.6);
+            border-left: 2px solid var(--primary-color);
+            padding-left: 8px;
+            margin-top: 4px;
+            display: block;
+        }
+
+        .highlight-gold { color: #f5a623; font-weight: 700; font-size: 1.1rem; }
+
+        .datetime-container { display: flex; flex-direction: column; line-height: 1.2; }
+        .datetime-date { font-weight: 500; color: #fff; }
+        .datetime-time { font-size: 0.75rem; opacity: 0.7; color: rgba(255, 255, 255, 0.6); }
+
+        .text-detail { font-size: 0.8rem; color: rgba(255, 255, 255, 0.6); display: block; }
+        .text-detail i { color: var(--primary-color); width: 18px; }
+
+        .responsable-wrapper { display: flex; flex-direction: column; align-items: center; line-height: 1.3; }
+        .responsable-name { color: #fff; font-weight: 600; font-size: 0.9rem; }
+        .responsable-role { color: rgba(255, 255, 255, 0.5); font-size: 0.75rem; text-transform: uppercase; }
+
+        .swal2-validation-message {
+            background-color: transparent !important;
+            color: #ff8a8a !important;
+            font-weight: 600 !important;
+            border: none !important;
+            margin-top: 15px !important;
+        }
+
+        .filter-label-group {
+            display: block;
+            color: var(--primary-color);
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 15px 0 10px 0;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container-custom fade-in">
+    <div class="header">
+        <div class="greeting">
+            <div class="s">Punto de <span class="n">Venta</span></div>
+            <div class="subtitle" style="opacity: 0.8; font-size: 0.85rem; color: white;">Registro y control de ingresos del establecimiento</div>
+        </div>
+
+        <div class="d-flex align-items-center">
+            <div class="search-container me-3">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    <input type="text" id="inputBusqueda" class="form-control" placeholder="Buscar venta, mesa o cajero..." onkeyup="filtrarTodo()">
+                </div>
+            </div>
+
+            <button type="button" class="btn-filtro-header me-3" data-bs-toggle="modal" data-bs-target="#filtroVentaModal">
+                <i class="fas fa-filter"></i> Filtros
+            </button>
+
+            <button type="button" class="btn-nuevo-header me-3" onclick="generarPDFGlobal('tablaVentas', 'Historial de Ventas', [7])">
+                <i class="fas fa-file-pdf"></i> PDF
+            </button>
+
+            <a href="{% url 'crear_venta' %}" class="btn-nuevo-header">+ Nueva Venta</a>
+        </div>
+    </div>
+
+    <div class="card-wyk-table">
+        <div class="table-responsive">
+            <table class="table-wyk" id="tablaVentas">
+                <thead>
+                    <tr>
+                        <th style="width: 60px;" class="text-center">ID</th>
+                        <th style="width: 140px;">FECHA Y HORA</th>
+                        <th>VENTA / MESA</th>
+                        <th>OBSERVACIONES</th>
+                        <th class="text-center">TOTAL</th>
+                        <th class="text-center">RESPONSABLE</th>
+                        <th class="text-center">ESTADO</th>
+                        <th class="text-center">ACCIONES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for v in ventas %}
+                    <tr data-estado="{{ v.estado_pago|lower }}">
+                        <td class="text-center text-gold fw-bold">#{{ v.id_venta }}</td>
+                        <td>
+                            <div class="datetime-container">
+                                <span class="datetime-date">{{ v.fecha_hora_venta|date:"d/m/Y" }}</span>
+                                <span class="datetime-time">{{ v.fecha_hora_venta|date:"H:i" }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="fw-bold text-white">Venta POS</div>
+                            <span class="mesa-badge">
+                                {% if v.numero_mesa %} Mesa: {{ v.numero_mesa }} {% else %} Para llevar / Mostrador {% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="text-detail">
+                                <i class="fas fa-comment-alt"></i> {{ v.descripcion|default:"Sin observaciones" }}
+                            </span>
+                        </td>
+                        <td class="text-center highlight-gold">$ {{ v.total_venta|floatformat:0 }}</td>
+                        <td class="text-center">
+                            <div class="responsable-wrapper">
+                                <span class="responsable-name">{{ v.id_usuario_fk_venta.nombre }}</span>
+                                <span class="responsable-role">{{ v.id_usuario_fk_venta.rol_fk_usuario.rol }}</span>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            {# 1. Estado de Entrega (Pedido) #}
+                            <span class="badge-estado pedido-{{ v.estado_pedido|lower }}">
+                                {{ v.estado_pedido }}
+                            </span>
+
+                            {# 2. Sub-estado de Pago #}
+                            {% if v.estado_pago == 'PAGADA' %}
+                                <span class="sub-estado text-success"><i class="fas fa-check-circle"></i> PAGADA</span>
+                            {% elif v.estado_pago == 'CANCELADA' %}
+                                <span class="sub-estado text-danger"><i class="fas fa-times-circle"></i> ANULADA</span>
+                            {% else %}
+                                <span class="sub-estado text-warning"><i class="fas fa-clock"></i> COBRO PENDIENTE</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <div class="btn-group-actions">
+                                <a href="{% url 'detalle_venta' v.id_venta %}" class="btn-action" title="Ver Detalle">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+
+                                {# ACCIÓN: Entregar (Aparece si está PENDIENTE y el usuario es MESERO o ADMIN) #}
+                                {% if v.estado_pedido == 'PENDIENTE' and v.estado_pago == 'PENDIENTE' %}
+                                    {% if user.rol_fk_usuario.rol == 'MESERO' or user.rol_fk_usuario.rol == 'ADMIN' %}
+                                    <button type="button" class="btn-action" style="color: #007bff;"
+                                            onclick="confirmarAccionVenta('{{ v.id_venta }}', 'entregar')" title="Marcar como Entregado">
+                                        <i class="fas fa-truck"></i>
+                                    </button>
+                                    {% endif %}
+                                {% endif %}
+
+                                {# ACCIÓN: Cobrar (Aparece si ya fue ENTREGADO y el usuario es CAJERO o ADMIN) #}
+                                {% if v.estado_pedido == 'ENTREGADO' and v.estado_pago == 'PENDIENTE' %}
+                                    {% if user.rol_fk_usuario.rol == 'CAJERO' or user.rol_fk_usuario.rol == 'ADMIN' %}
+                                    <button type="button" class="btn-action" style="color: #28a745;"
+                                            onclick="confirmarAccionVenta('{{ v.id_venta }}', 'finalizar')" title="Cobrar Venta">
+                                        <i class="fas fa-cash-register"></i>
+                                    </button>
+                                    {% endif %}
+                                {% endif %}
+
+                                {# ACCIÓN: Anular (ADMIN puede siempre que no esté cancelada; Otros solo si está PENDIENTE de pago) #}
+                                {% if v.estado_pago != 'CANCELADA' %}
+                                    {% if user.rol_fk_usuario.rol == 'ADMIN' or v.estado_pago == 'PENDIENTE' %}
+                                    <button type="button" class="btn-action" style="color: #ff8a8a;"
+                                            onclick="confirmarAccionVenta('{{ v.id_venta }}', 'cancelar')" title="Anular Venta">
+                                        <i class="fas fa-ban"></i>
+                                    </button>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-5">
+                            <i class="fas fa-cash-register d-block mb-2" style="font-size: 2rem; opacity: 0.3;"></i>
+                            No hay ventas registradas.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{# Modal de Filtros #}
+<div class="modal fade" id="filtroVentaModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-content-wyk">
+            <div class="modal-header modal-header-wyk">
+                <h5 class="modal-title text-gold"><i class="fas fa-sliders-h"></i> Filtros de Ventas</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <span class="filter-label-group">Estado de Pago:</span>
+                <div class="filter-container">
+                    <div class="chip active" data-group="estado" data-filter="all">Todos</div>
+                    <div class="chip" data-group="estado" data-filter="pendiente">Pendientes</div>
+                    <div class="chip" data-group="estado" data-filter="pagada">Pagadas</div>
+                    <div class="chip" data-group="estado" data-filter="cancelada">Canceladas</div>
+                </div>
+            </div>
+            <div class="modal-footer" style="border-top: none;">
+                <button type="button" class="btn btn-secondary w-100" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/sweetalert2.all.min.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+<script src="{% static 'js/reportes-pdf.js' %}"></script>
+
+<script>
+    const swalWykConfig = {
+        background: '#1a0a00',
+        color: '#fff',
+        confirmButtonColor: '#f5a623',
+        heightAuto: false,
+        allowOutsideClick: false
+    };
+
+    document.addEventListener('DOMContentLoaded', function() {
+        {% if messages %}
+            {% for message in messages %}
+                Swal.fire({
+                    ...swalWykConfig,
+                    icon: "{% if message.tags == 'error' %}error{% else %}success{% endif %}",
+                    title: "{% if message.tags == 'error' %}¡Error!{% else %}¡Éxito!{% endif %}",
+                    text: "{{ message }}",
+                    timer: 3000,
+                    showConfirmButton: false
+                });
+            {% endfor %}
+        {% endif %}
+    });
+
+    function filtrarTodo() {
+        const texto = document.getElementById('inputBusqueda').value.toLowerCase();
+        const estado = document.querySelector('.chip[data-group="estado"].active').dataset.filter;
+        const rows = document.querySelectorAll('#tablaVentas tbody tr');
+
+        rows.forEach(row => {
+            if (row.cells.length < 2) return;
+            const content = row.innerText.toLowerCase();
+            const rowEstado = row.dataset.estado;
+            const matchesText = content.includes(texto);
+            const matchesEstado = (estado === 'all' || rowEstado === estado);
+            row.style.display = (matchesText && matchesEstado) ? '' : 'none';
+        });
+    }
+
+    document.querySelectorAll('.chip').forEach(chip => {
+        chip.addEventListener('click', function() {
+            document.querySelectorAll(`.chip[data-group="${this.dataset.group}"]`).forEach(c => c.classList.remove('active'));
+            this.classList.add('active');
+            filtrarTodo();
+        });
+    });
+
+    function confirmarAccionVenta(id, accion) {
+        const config = {
+            entregar: {
+                title: '¿Confirmar Entrega?',
+                text: 'La orden se marcará como entregada al cliente.',
+                icon: 'info',
+                url: "{% url 'entregar_venta_ajax' %}",
+                requirePass: false
+            },
+            finalizar: {
+                title: '¿Confirmar Cobro?',
+                text: 'Se registrará el pago y se descontará el stock de los productos.',
+                icon: 'success',
+                url: "{% url 'finalizar_venta_ajax' %}",
+                requirePass: false
+            },
+            cancelar: {
+                title: '¿Anular Venta?',
+                text: `Esta acción cancelará la orden de venta #${id}.`,
+                icon: 'warning',
+                url: "{% url 'cancelar_venta_ajax' %}",
+                requirePass: true
+            }
+        }[accion];
+
+        const swalOptions = {
+            ...swalWykConfig,
+            title: config.title,
+            text: config.text,
+            icon: config.icon,
+            showCancelButton: true,
+            confirmButtonText: 'Confirmar',
+            cancelButtonText: 'Cerrar',
+            showLoaderOnConfirm: true
+        };
+
+        if (config.requirePass) {
+            swalOptions.input = 'password';
+            swalOptions.inputAttributes = { placeholder: 'Contraseña de confirmación', autocapitalize: 'off' };
+        }
+
+        Swal.fire(swalOptions).then((result) => {
+            if (result.isConfirmed) {
+                const password = result.value || '';
+
+                if (config.requirePass && !password) {
+                    Swal.fire({...swalWykConfig, icon: 'error', title: 'Error', text: 'La contraseña es obligatoria.'});
+                    return;
+                }
+
+                fetch(config.url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({ id_venta: id, password: password })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire({...swalWykConfig, icon: 'success', title: '¡Éxito!', text: data.message, timer: 1500, showConfirmButton: false})
+                        .then(() => location.reload());
+                    } else {
+                        Swal.fire({...swalWykConfig, icon: 'error', title: 'Error', text: data.message});
+                    }
+                })
+                .catch(error => {
+                    Swal.fire({...swalWykConfig, icon: 'error', title: 'Error de Red', text: 'No se pudo procesar la solicitud.'});
+                });
+            }
+        });
+    }
+</script>
+{% endblock %}
