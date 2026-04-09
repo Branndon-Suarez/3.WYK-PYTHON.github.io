@@ -51,7 +51,9 @@
                     <i class="fa fa-users"></i>
                     <span>Usuarios</span>
                 </a>
+                {% endif %}
 
+                {% if user.rol_fk_usuario.rol == 'ADMIN' or user.rol_fk_usuario.rol == 'PANADERO' or user.rol_fk_usuario.rol == 'PASTELERO' %}
                 <div class="nav-section">INVENTARIO</div>
 
                 <a href="{% url 'lista_productos' %}" class="nav-item {% if 'producto' in request.resolver_match.url_name and 'ajuste' not in request.resolver_match.url_name %}active{% endif %}">
@@ -63,7 +65,9 @@
                     <i class="fa fa-leaf"></i>
                     <span>Materia Prima</span>
                 </a>
+                {% endif %}
 
+                {% if user.rol_fk_usuario.rol == 'ADMIN' %}
                 <a href="{% url 'lista_ajustes_producto' %}" class="nav-item {% if 'ajustes_producto' in request.resolver_match.url_name %}active{% endif %}">
                     <i class="fa fa-sliders-h"></i>
                     <span>Ajuste Productos</span>

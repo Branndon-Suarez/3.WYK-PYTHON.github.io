@@ -17,8 +17,9 @@ from django.utils import timezone
 
 @login_required
 def lista_productos(request):
-    if request.user.rol_fk_usuario.rol != 'ADMIN':
-        messages.error(request, "Acceso denegado. Solo administradores pueden ver el inventario.")
+    """ Permite que ADMIN, PASTELERO y PANADERO vean la lista de productos """
+    if request.user.rol_fk_usuario.rol not in ['ADMIN', 'PASTELERO', 'PANADERO']:
+        messages.error(request, "Acceso denegado. No tienes permisos para ver el inventario.")
         return redirect('inicio')
 
     productos = Producto.objects.all().order_by('id_producto')
@@ -168,7 +169,8 @@ def cambiar_estado_producto_ajax(request):
 
 @login_required
 def lista_materia_prima(request):
-    if request.user.rol_fk_usuario.rol != 'ADMIN':
+    """ Permite que ADMIN, PASTELERO y PANADERO vean la lista de materia prima """
+    if request.user.rol_fk_usuario.rol not in ['ADMIN', 'PASTELERO', 'PANADERO']:
         messages.error(request, "Acceso denegado.")
         return redirect('inicio')
 
