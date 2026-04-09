@@ -1,0 +1,364 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Nueva Producción - WYK{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/dashboard-formularios-crear-mov.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dashboard-formularios.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dashboard-tablas.css' %}">
+
+    <style>
+        .unit-subtitle { font-size: 0.7rem; color: rgba(255, 255, 255, 0.5); text-transform: lowercase; display: block; margin-top: 2px; }
+        .fila-seleccionable { cursor: pointer; transition: 0.3s; }
+        .fila-seleccionable:hover { background: rgba(245, 166, 35, 0.1) !important; }
+
+        .modal-body {
+            max-height: 450px;
+            overflow-y: auto !important;
+            padding: 0 !important;
+        }
+
+        input[name="cant_produccion"] {
+            pointer-events: auto !important;
+            cursor: text !important;
+            background: rgba(255, 255, 255, 0.05) !important;
+        }
+
+        .tabla-insumos input {
+            background: rgba(255, 255, 255, 0.05) !important;
+            color: white !important;
+            border: 1px solid rgba(245, 166, 35, 0.3) !important;
+            padding: 8px !important;
+            width: 100%;
+        }
+
+        /* Clase para error de stock */
+        .stock-insuficiente {
+            border: 1px solid #ff8a8a !important;
+            background: rgba(255, 138, 138, 0.1) !important;
+            box-shadow: 0 0 5px rgba(255, 138, 138, 0.5);
+        }
+
+        .tabla-insumos select {
+            pointer-events: none;
+            background: rgba(0,0,0,0.2) !important;
+            border: none;
+            color: #f5a623;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="compra-container">
+    <a href="{% url 'lista_produccion' %}" class="volver" style="color: var(--dorado-wyk); text-decoration: none; display: inline-block; margin-bottom: 15px;">
+        <i class="fas fa-arrow-left"></i> Volver al Historial
+    </a>
+
+    <h2 class="titulo-seccion"><i class="fas fa-hammer"></i> Registrar Orden de Producción</h2>
+
+    <form method="post" id="formNuevaProduccion">
+        {% csrf_token %}
+
+        <input type="hidden" name="estado_produccion" value="PENDIENTE">
+
+        <div class="form-card-wyk">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label><i class="fas fa-tag"></i> Nombre del Lote / Producción</label>
+                    {{ form.nombre_produccion }}
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fas fa-cookie-bite"></i> Producto a Obtener</label>
+                    <div class="role-selector-group">
+                        <input type="text" id="prod_final_display" class="form-control" placeholder="Seleccionar producto..." readonly required>
+                        <input type="hidden" name="id_producto_fk_produccion" id="id_prod_final_hidden">
+                        <button type="button" class="btn-search-wyk" data-bs-toggle="modal" data-bs-target="#modalProductosFinales">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fas fa-boxes"></i> Cantidad a Producir</label>
+                    {{ form.cant_produccion }}
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fas fa-layer-group"></i> Categoría</label>
+                    {{ form.categoria_produccion }}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label><i class="fas fa-align-left"></i> Notas / Observaciones</label>
+                {{ form.descripcion_produccion }}
+            </div>
+        </div>
+
+        <div class="productos-card">
+            <button type="button" id="btn-add-materia" class="btn-add-item" onclick="abrirModalInsumo()">
+                <i class="fas fa-plus"></i> Añadir Insumo (Materia Prima)
+            </button>
+            <h3 style="margin-bottom: 20px;">Insumos Requeridos (Receta)</h3>
+
+            <div class="table-wrap">
+                {{ formset.management_form }}
+                <table class="tabla-insumos" id="tabla-insumos">
+                    <thead>
+                        <tr>
+                            <th>Materia Prima</th>
+                            <th style="width: 250px;">Cantidad Requerida</th>
+                            <th style="width: 80px;" class="text-center">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+
+                <template id="empty-row-insumo">
+                    <tr>
+                        <td>{{ formset.empty_form.id_materia_prima_fk_det_produc }}</td>
+                        <td>{{ formset.empty_form.cantidad_requerida }}</td>
+                        <td class="text-center">
+                            <button type="button" class="btn-eliminar-fila" onclick="eliminarFila(this)">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                </template>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px;">
+            <button type="button" class="btn-guardar-wyk" onclick="confirmarGuardado()">
+                <i class="fas fa-check-circle"></i> Crear Orden de Producción
+            </button>
+        </div>
+    </form>
+</div>
+
+<div class="modal fade modal-wyk-custom" id="modalProductosFinales" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header modal-header-wyk">
+                <h5 class="modal-title text-gold"><i class="fas fa-cookie me-2"></i> Seleccionar Producto Terminado</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-search-wrapper">
+                <div class="search-container">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" id="busquedaProdFinal" class="form-control" placeholder="Buscar producto..." autocomplete="off">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-body p-0">
+                <table class="table-wyk mb-0" id="tablaSelectorProdFinal">
+                    <thead>
+                        <tr>
+                            <th style="width: 80px;" class="text-center">ID</th>
+                            <th>NOMBRE PRODUCTO</th>
+                            <th class="text-center">STOCK ACTUAL</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pr in productos %}
+                        <tr class="fila-seleccionable" data-id="{{ pr.id_producto }}" data-nombre="{{ pr.nombre_producto }}">
+                            <td class="text-center text-gold">#{{ pr.id_producto }}</td>
+                            <td class="text-white">{{ pr.nombre_producto }}</td>
+                            <td class="text-center">
+                                <span class="badge-nivel">{{ pr.cant_exist_producto }}</span>
+                                <span class="unit-subtitle">unidades</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade modal-wyk-custom" id="modalMateriaPrima" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header modal-header-wyk">
+                <h5 class="modal-title text-gold"><i class="fas fa-leaf me-2"></i> Añadir Insumo a la Producción</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-search-wrapper">
+                <div class="search-container">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" id="busquedaMat" class="form-control" placeholder="Buscar insumo..." autocomplete="off">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-body p-0">
+                <table class="table-wyk mb-0" id="tablaSelectorMateria">
+                    <thead>
+                        <tr>
+                            <th style="width: 80px;" class="text-center">ID</th>
+                            <th>NOMBRE DEL INSUMO</th>
+                            <th class="text-center">DISPONIBLE</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for m in materias_primas %}
+                        <tr class="fila-seleccionable" data-id="{{ m.id_materia_prima }}" data-nombre="{{ m.nombre_materia_prima }}" data-stock="{{ m.cantidad_exist_mat_prima|stringformat:'.3f' }}">
+                            <td class="text-center text-gold">#{{ m.id_materia_prima }}</td>
+                            <td class="text-white">{{ m.nombre_materia_prima }}</td>
+                            <td class="text-center">
+                                <span class="badge-nivel">{{ m.cantidad_exist_mat_prima|floatformat:"-3" }}</span>
+                                <span class="unit-subtitle">{{ m.presentacion_mat_prima|lower }}</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/sweetalert2.all.min.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const swalConfig = { background: '#1a0a00', color: '#fff', confirmButtonColor: '#f5a623', heightAuto: false };
+
+    function setupSearch(inputId, tableId) {
+        const input = document.getElementById(inputId);
+        if (input) {
+            input.addEventListener('keyup', function() {
+                const term = this.value.toLowerCase();
+                document.querySelectorAll(`#${tableId} tbody tr`).forEach(f => {
+                    f.style.display = f.textContent.toLowerCase().includes(term) ? "" : "none";
+                });
+            });
+        }
+    }
+    setupSearch('busquedaProdFinal', 'tablaSelectorProdFinal');
+    setupSearch('busquedaMat', 'tablaSelectorMateria');
+
+    document.querySelectorAll('#tablaSelectorProdFinal tbody tr').forEach(fila => {
+        fila.addEventListener('click', function() {
+            document.getElementById('id_prod_final_hidden').value = this.getAttribute('data-id');
+            document.getElementById('prod_final_display').value = this.getAttribute('data-nombre');
+            bootstrap.Modal.getInstance(document.getElementById('modalProductosFinales')).hide();
+        });
+    });
+
+    function abrirModalInsumo() {
+        new bootstrap.Modal(document.getElementById('modalMateriaPrima')).show();
+    }
+
+    function agregarFilaInsumo(item_id, item_stock) {
+        const totalFormsInput = document.getElementById('id_insumos_set-TOTAL_FORMS');
+        const totalForms = parseInt(totalFormsInput.value);
+        const template = document.getElementById('empty-row-insumo');
+
+        const content = template.content.cloneNode(true);
+        const tr = content.querySelector('tr');
+
+        tr.innerHTML = tr.innerHTML.replace(/__prefix__/g, totalForms);
+
+        const tbody = document.querySelector('#tabla-insumos tbody');
+        tbody.appendChild(tr);
+
+        const select = tbody.lastElementChild.querySelector('select');
+        const inputCant = tbody.lastElementChild.querySelector('input[name*="cantidad_requerida"]');
+
+        select.value = item_id;
+        // Guardamos el stock disponible en un atributo del input para validar
+        inputCant.setAttribute('data-stock-max', item_stock);
+
+        // Listener para validación inmediata
+        inputCant.addEventListener('input', function() {
+            validarStockFila(this);
+        });
+
+        totalFormsInput.value = totalForms + 1;
+    }
+
+    function validarStockFila(input) {
+        const stockMax = parseFloat(input.getAttribute('data-stock-max'));
+        const valorIngresado = parseFloat(input.value);
+
+        if (valorIngresado > stockMax) {
+            input.classList.add('stock-insuficiente');
+            Swal.fire({
+                ...swalConfig,
+                icon: 'warning',
+                title: 'Stock Insuficiente',
+                text: `Solo tienes ${stockMax} disponibles.`,
+                toast: true,
+                position: 'top-end',
+                timer: 3000,
+                showConfirmButton: false
+            });
+        } else {
+            input.classList.remove('stock-insuficiente');
+        }
+    }
+
+    document.querySelectorAll('#tablaSelectorMateria tbody tr').forEach(fila => {
+        fila.addEventListener('click', function() {
+            agregarFilaInsumo(this.getAttribute('data-id'), this.getAttribute('data-stock'));
+            bootstrap.Modal.getInstance(document.getElementById('modalMateriaPrima')).hide();
+        });
+    });
+
+    function eliminarFila(btn) {
+        btn.closest('tr').remove();
+        const totalFormsInput = document.getElementById('id_insumos_set-TOTAL_FORMS');
+        totalFormsInput.value = document.querySelectorAll('#tabla-insumos tbody tr').length;
+    }
+
+    function confirmarGuardado() {
+        const producto = document.getElementById('id_prod_final_hidden').value;
+        const nombreLote = document.querySelector('input[name="nombre_produccion"]').value;
+        const cantidad = document.querySelector('input[name="cant_produccion"]').value;
+        const filasInsumos = document.querySelectorAll('#tabla-insumos tbody tr').length;
+
+        // Verificar si hay errores de stock
+        const erroresStock = document.querySelectorAll('.stock-insuficiente').length;
+
+        if (erroresStock > 0) {
+            Swal.fire({...swalConfig, icon: 'error', title: 'Error de Inventario', text: 'Hay insumos que superan el stock disponible. Corrige las cantidades en rojo.'});
+            return;
+        }
+
+        if (!producto || !nombreLote || !cantidad) {
+            Swal.fire({...swalConfig, icon: 'warning', title: 'Campos Incompletos', text: 'Revisa el nombre, el producto y la cantidad.'});
+            return;
+        }
+
+        if (filasInsumos === 0) {
+            Swal.fire({...swalConfig, icon: 'warning', title: 'Sin Insumos', text: 'Debes añadir al menos una materia prima.'});
+            return;
+        }
+
+        Swal.fire({
+            ...swalConfig,
+            title: '¿Registrar Orden?',
+            text: "Se guardará la orden de producción.",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, registrar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                setTimeout(() => {
+                    document.getElementById('formNuevaProduccion').submit();
+                }, 100);
+            }
+        });
+    }
+</script>
+{% endblock %}
