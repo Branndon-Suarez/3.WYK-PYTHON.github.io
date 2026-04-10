@@ -1,0 +1,31 @@
+Librerias:
+Para Django y sus dependencias:
+pip install Django==6.0.2 asgiref==3.11.1 sqlparse==0.5.5 tzdata==2025.3
+
+Para el manejo de imágenes:
+pip install pillow==12.1.1
+
+Para la conexión con PostgreSQL:
+pip install psycopg==3.3.3 psycopg-binary==3.3.3
+
+Para las variables de entorno:
+pip install python-dotenv==1.2.2
+
+
+Comandos:
+python manage.py makemigrations usuarios inventario compras ventas produccion
+
+python manage.py migrate usuarios --fake
+
+python manage.py migrate
+
+python manage.py shell
+from usuarios.models import Rol
+
+# Creamos el rol necesario para el superusuario
+Rol.objects.create(rol='ADMIN', clasificacion='ADMINISTRADOR', estado_rol=True)
+
+# Salir de la shell
+exit()
+
+python manage.py createsuperuser
