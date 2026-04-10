@@ -114,39 +114,3 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
         return f"{self.nombre} ({self.rol_fk_usuario.rol})"
 
 
-# ---------------------------------MODELO TAREA---------------------------------
-
-class Tarea(models.Model):
-    class Prioridad(models.TextChoices):
-        BAJA = 'BAJA', 'Baja'
-        MEDIA = 'MEDIA', 'Media'
-        ALTA = 'ALTA', 'Alta'
-
-    class EstadoTarea(models.TextChoices):
-        PENDIENTE = 'PENDIENTE', 'Pendiente'
-        COMPLETADA = 'COMPLETADA', 'Completada'
-        CANCELADA = 'CANCELADA', 'Cancelada'
-
-    id_tarea = models.AutoField(primary_key=True, db_column='id_tarea')
-    tarea = models.CharField(max_length=100, db_column='tarea')
-    categoria = models.CharField(max_length=80, db_column='categoria')
-    descripcion = models.CharField(max_length=250, blank=True, null=True, db_column='descripcion')
-    tiempo_estimado_horas = models.FloatField(db_column='tiempo_estimado_horas')
-
-    prioridad = models.CharField(max_length=10, choices=Prioridad.choices, db_column='prioridad')
-
-    # AJUSTAR ESTA LÍNEA:
-    estado_tarea = models.CharField(
-        max_length=15,
-        choices=EstadoTarea.choices,  # <--- Agregamos los choices
-        db_column='estado_tarea'  # Verifica si en tu SQL es ESTADO_TAREA o ESTADO_REA
-    )
-
-    usuario_asignado_fk = models.ForeignKey(Usuario, on_delete=models.PROTECT, db_column='usuario_asignado_fk',
-                                            related_name='tareas_asignadas')
-    usuario_creador_fk = models.ForeignKey(Usuario, on_delete=models.PROTECT, db_column='usuario_creador_fk',
-                                           related_name='tareas_creadas')
-
-    class Meta:
-        managed = False
-        db_table = 'tarea'
