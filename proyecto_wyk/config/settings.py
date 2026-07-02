@@ -103,6 +103,9 @@ else:
             'PASSWORD': os.getenv('DB_PASSWORD'),
             'HOST': os.getenv('DB_HOST'),
             'PORT': os.getenv('DB_PORT'),
+            'TEST': {
+                'NAME': 'wyk_test',  # <-- Agregamos esto para que en los tests apunte a tu clon
+            },
         }
     }
 
@@ -184,3 +187,6 @@ CSRF_TRUSTED_ORIGINS = [
 # Si Railway genera un dominio estático alternativo, lo agregamos de forma dinámica para evitar bloqueos de CSRF
 if os.environ.get('RAILWAY_STATIC_URL'):
     CSRF_TRUSTED_ORIGINS.append(f"https://{os.environ.get('RAILWAY_STATIC_URL')}")
+
+# Activar el Test Runner personalizado para pruebas locales seguras
+TEST_RUNNER = 'config.test_runner.UnmanagedTestRunner'
