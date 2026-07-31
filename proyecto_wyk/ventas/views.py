@@ -10,6 +10,7 @@ import json
 from .models import Venta, DetalleVenta
 from inventario.models import Producto
 from .forms import VentaForm, DetalleVentaFormSet
+from .services import procesar_venta_con_abastecimiento
 
 
 # ------------------------------ GESTIÓN DE VENTAS (CRUD) ------------------------------
@@ -32,19 +33,18 @@ def lista_ventas(request):
 @login_required
 def crear_venta(request):
     """
-    Registra una nueva orden de venta.
+    Registra una nueva orden de venta delegando el procesamiento
+    y la creación de órdenes de abastecimiento al servicio correspondiente.
     """
     productos = Producto.objects.filter(estado_producto=True)
-    rol_usuario = request.user.rol_fk_usuario.rol
 
-    # --- NUEVA LÓGICA: Calcular stock real para el modal ---
+    # --- Calcular stock real para la vista/modal ---
     for p in productos:
         apartado = DetalleVenta.objects.filter(
             id_producto_fk_det_venta=p,
             id_venta_fk_det_venta__estado_pago='PENDIENTE'
         ).aggregate(Sum('cantidad'))['cantidad__sum'] or 0
 
-        # Este es el valor que el template ahora puede leer
         p.cant_real_disponible = max(0, p.cant_exist_producto - apartado)
 
     if request.method == 'POST':
@@ -53,61 +53,24 @@ def crear_venta(request):
 
         if form.is_valid() and formset.is_valid():
             try:
-                with transaction.atomic():
-                    nueva_venta = form.save(commit=False)
-                    nueva_venta.id_usuario_fk_venta = request.user
-                    nueva_venta.fecha_hora_venta = timezone.now()
-
-                    if rol_usuario in ['ADMIN', 'CAJERO']:
-                        nueva_venta.estado_pedido = 'ENTREGADO'
-                        nueva_venta.estado_pago = 'PAGADA'
-                    else:
-                        nueva_venta.estado_pedido = 'PENDIENTE'
-                        nueva_venta.estado_pago = 'PENDIENTE'
-
-                    nueva_venta.total_venta = 0
-                    nueva_venta.save()
-
-                    detalles = formset.save(commit=False)
-                    total_calculado = 0
-
-                    for detalle in detalles:
-                        producto = detalle.id_producto_fk_det_venta
-
-                        # Recalculamos dentro del atomic para máxima seguridad
-                        apartado = DetalleVenta.objects.filter(
-                            id_producto_fk_det_venta=producto,
-                            id_venta_fk_det_venta__estado_pago='PENDIENTE'
-                        ).aggregate(Sum('cantidad'))['cantidad__sum'] or 0
-
-                        stock_real = producto.cant_exist_producto - apartado
-
-                        if detalle.cantidad > stock_real:
-                            raise ValueError(
-                                f"No hay stock suficiente para {producto.nombre_producto}. (Disponible: {stock_real})")
-
-                        if rol_usuario in ['ADMIN', 'CAJERO']:
-                            producto.cant_exist_producto -= detalle.cantidad
-                            producto.save()
-
-                        detalle.id_venta_fk_det_venta = nueva_venta
-                        detalle.sub_total = producto.valor_unitario_product * detalle.cantidad
-                        total_calculado += detalle.sub_total
-                        detalle.save()
-
-                    nueva_venta.total_venta = total_calculado
-                    nueva_venta.save()
-
-                    messages.success(request, f"Venta #{nueva_venta.id_venta} registrada correctamente.")
-                    return redirect('lista_ventas')
+                # Delegamos toda la transacción y lógica de faltantes al Service
+                nueva_venta = procesar_venta_con_abastecimiento(
+                    usuario=request.user,
+                    form_venta=form,
+                    formset_detalles=formset
+                )
+                messages.success(request, f"Venta #{nueva_venta.id_venta} registrada correctamente.")
+                return redirect('lista_ventas')
             except ValueError as e:
                 messages.error(request, str(e))
             except Exception as e:
                 messages.error(request, f"Error en base de datos: {str(e)}")
         else:
-            for error in form.non_field_errors(): messages.error(request, error)
+            for error in form.non_field_errors():
+                messages.error(request, error)
             for field in form:
-                for error in field.errors: messages.error(request, f"{field.label}: {error}")
+                for error in field.errors:
+                    messages.error(request, f"{field.label}: {error}")
     else:
         form = VentaForm()
         formset = DetalleVentaFormSet(prefix='detalles_set')
@@ -186,9 +149,10 @@ def editar_venta(request, id_venta):
                         obj.delete()
 
                     # 3. Recalcular el total final sumando todos los detalles vigentes en la BD
-                    total_final = \
-                    DetalleVenta.objects.filter(id_venta_fk_det_venta=venta_actualizada).aggregate(Sum('sub_total'))[
-                        'sub_total__sum'] or 0
+                    total_final = DetalleVenta.objects.filter(
+                        id_venta_fk_det_venta=venta_actualizada
+                    ).aggregate(Sum('sub_total'))['sub_total__sum'] or 0
+
                     venta_actualizada.total_venta = total_final
                     venta_actualizada.save()
 
