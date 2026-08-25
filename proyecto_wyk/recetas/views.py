@@ -182,7 +182,7 @@ def cambiar_estado_receta_ajax(request):
 def obtener_receta_por_producto_ajax(request, id_producto):
     """
     Endpoint para que Producción jale automáticamente los insumos
-    cuando se selecciona un producto.
+    cuando se selecciona un productos.
     """
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
         try:
